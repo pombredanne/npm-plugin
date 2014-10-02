@@ -60,5 +60,3 @@ FrondEnd JS using Require.js / AMD
 Command line interface
 
 Posting Report
-
-Front End plugins using require.js / amd
