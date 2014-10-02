@@ -4,32 +4,32 @@
     "dependencies": {
         "cli": {
             "version": "0.6.4",
-            "from": "https://registry.npmjs.org/cli/-/cli-0.6.4.tgz",
+            "from": "cli@^0.6.4",
             "resolved": "https://registry.npmjs.org/cli/-/cli-0.6.4.tgz",
             "dependencies": {
                 "glob": {
                     "version": "3.2.11",
-                    "from": "https://registry.npmjs.org/glob/-/glob-3.2.11.tgz",
+                    "from": "glob@~ 3.2.1",
                     "resolved": "https://registry.npmjs.org/glob/-/glob-3.2.11.tgz",
                     "dependencies": {
                         "inherits": {
                             "version": "2.0.1",
-                            "from": "https://registry.npmjs.org/inherits/-/inherits-2.0.1.tgz",
+                            "from": "inherits@2",
                             "resolved": "https://registry.npmjs.org/inherits/-/inherits-2.0.1.tgz"
                         },
                         "minimatch": {
                             "version": "0.3.0",
-                            "from": "https://registry.npmjs.org/minimatch/-/minimatch-0.3.0.tgz",
+                            "from": "minimatch@0.3",
                             "resolved": "https://registry.npmjs.org/minimatch/-/minimatch-0.3.0.tgz",
                             "dependencies": {
                                 "lru-cache": {
                                     "version": "2.5.0",
-                                    "from": "https://registry.npmjs.org/lru-cache/-/lru-cache-2.5.0.tgz",
+                                    "from": "lru-cache@2",
                                     "resolved": "https://registry.npmjs.org/lru-cache/-/lru-cache-2.5.0.tgz"
                                 },
                                 "sigmund": {
                                     "version": "1.0.0",
-                                    "from": "https://registry.npmjs.org/sigmund/-/sigmund-1.0.0.tgz",
+                                    "from": "sigmund@~1.0.0",
                                     "resolved": "https://registry.npmjs.org/sigmund/-/sigmund-1.0.0.tgz"
                                 }
                             }
@@ -38,14 +38,15 @@
                 },
                 "exit": {
                     "version": "0.1.2",
-                    "from": "https://registry.npmjs.org/exit/-/exit-0.1.2.tgz",
-                    "resolved": "https://registry.npmjs.org/exit/-/exit-0.1.2.tgz"
+                    "from": "exit@0.1.2",
+                    "resolved": "https://registry.npmjs.org/exit/-/exit-0.1.2.tgz",
+                    "shasum": "0632638f8d877cc82107d30a0fff1a17cba1cd0c"
                 }
             }
         },
         "npm": {
             "version": "2.0.2",
-            "from": "https://registry.npmjs.org/npm/-/npm-2.0.2.tgz",
+            "from": "npm@^2.0.2",
             "resolved": "https://registry.npmjs.org/npm/-/npm-2.0.2.tgz",
             "dependencies": {
                 "abbrev": {
@@ -679,7 +680,7 @@
         },
         "prompt": {
             "version": "0.2.14",
-            "from": "prompt@",
+            "from": "prompt@^0.2.14",
             "resolved": "https://registry.npmjs.org/prompt/-/prompt-0.2.14.tgz",
             "dependencies": {
                 "pkginfo": {
@@ -715,7 +716,7 @@
                     "dependencies": {
                         "async": {
                             "version": "0.2.10",
-                            "from": "async@~0.2.9",
+                            "from": "async@0.2.x",
                             "resolved": "https://registry.npmjs.org/async/-/async-0.2.10.tgz"
                         },
                         "deep-equal": {
@@ -801,7 +802,7 @@
         },
         "traverse": {
             "version": "0.6.6",
-            "from": "https://registry.npmjs.org/traverse/-/traverse-0.6.6.tgz",
+            "from": "traverse@^0.6.6",
             "resolved": "https://registry.npmjs.org/traverse/-/traverse-0.6.6.tgz"
         }
     }

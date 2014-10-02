@@ -1,1 +1,8 @@
-undefined
+{
+    "Username": "ssf",
+    "Password": "safsad",
+    "Token": "asfas",
+    "Traverse Depth": "sdfs",
+    "Use black list? <yes></no>": "asf",
+    "Fail build when using invalid dependencies? <yes> | <no>": "asff"
+}

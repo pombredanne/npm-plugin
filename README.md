@@ -38,6 +38,10 @@ $ whitesource config
 
 
 ### to run whitesource after initial configuration 
+
+Locate the project you want to build and run whitesource from the project root.
+make sure there is a **package.json** file in the project root before running whitesource
+
 ```bash
 $ whitesource run
 ```
