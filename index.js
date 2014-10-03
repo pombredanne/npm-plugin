@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 "use strict";
 
 var cli = require('cli');
@@ -189,4 +190,4 @@ cli.main(function (args, options) {
 		console.log("\n\n")
 		startPrompt();
 	}
-})
+});
