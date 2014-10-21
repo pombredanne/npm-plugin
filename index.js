@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 "use strict";
 
 var cli = require('cli');
@@ -13,7 +12,7 @@ prompt.delimiter = ">".green;
 var runtime = new Date().valueOf();
 var foundedShasum = 0;
 var missingShasum = 0;
-
+var shasumFound = 0;
 
 var traverseJson = function(){
 	var file = "./npm-shrinkwrap.json";
@@ -34,12 +33,17 @@ var traverseJson = function(){
 				var isResolved = (path[j] === "resolved");
 				var isFrom = (path[j] === "from");
 				var isName = (path[j] === "name");
-				var isShasum = (path[j] === "shasum");
+				//var isShasum = ((path[j] === "shasum" ) || (path[j] === "_shasum")); //shasum can be "_shasum"
+				var isShasum = (path[j] === "shasum"); //shasum can be "_shasum"
 				var isNodeMod = (path[j] === "node_modules");
-
 				if(isDep){
 					path[j] = "node_modules";
 					isNodeMod = true;
+				}
+
+				if(isShasum){
+					console.log('found');
+					shasumFound++;
 				}
 
 		        if(path[j] === path[path.length -1]
@@ -60,13 +64,22 @@ var traverseJson = function(){
 						var objPointer = 'data["' + joinedStr.replace(/node_modules/gi, "dependencies");
 						var dataObjPointer = eval(objPointer);
 			       		var obj = JSON.parse(fs.readFileSync(uri, 'utf8'));
-			       		if(obj.dist) {
+			       		
+			       		if(obj.dist || obj._shasum){
 			       			//cli.ok('Founded dependencie shasum');
-			       			dataObjPointer.shasum = obj.dist.shasum;
-			       			path.shasum = obj.dist.shasum;
+			       			if(obj.dist){
+			       				dataObjPointer.shasum = obj.dist.shasum;
+			       				path.shasum = obj.dist.shasum;
+			       			}
+			       			if(obj._shasum){
+			       				dataObjPointer.shasum = obj._shasum
+			       				path.shasum = obj._shasum;
+			       			}
+
 			       			foundedShasum++;
 			       		}else{//couldn't find shasum key
 			       			missingShasum++;
+			       			console.log(obj)
 			       		}
 		       		
 		         }
@@ -82,6 +95,7 @@ var traverseJson = function(){
 		      cli.error(err);
 		    } else {
 		      cli.ok("Saving report");
+		      cli.info("Is shasum found: " + shasumFound);
 		      cli.info("Total shasum found: " + foundedShasum);
 		      cli.info("Missing shasum: " + missingShasum);
 		      cli.info("Total project dependencies: " + (missingShasum + foundedShasum));
@@ -190,4 +204,4 @@ cli.main(function (args, options) {
 		console.log("\n\n")
 		startPrompt();
 	}
-});
+})
