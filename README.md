@@ -12,6 +12,10 @@
 
 Install using `npm install whitesource`
 
+
+More about the White Source service : [http://www.whitesourcesoftware.com/](http://www.whitesourcesoftware.com/)
+
+
 ## Example use
 
 ### whitesource config

@@ -1,5 +1,5 @@
+#!/usr/bin/env node
 "use strict";
-
 var cli = require('cli');
 var fs = require('fs');
 var util = require('util');
@@ -33,8 +33,8 @@ var traverseJson = function(){
 				var isResolved = (path[j] === "resolved");
 				var isFrom = (path[j] === "from");
 				var isName = (path[j] === "name");
-				//var isShasum = ((path[j] === "shasum" ) || (path[j] === "_shasum")); //shasum can be "_shasum"
-				var isShasum = (path[j] === "shasum"); //shasum can be "_shasum"
+				var isShasum = ((path[j] === "shasum" ) || (path[j] === "_shasum")); //shasum can be "_shasum"
+			//	var isShasum = (path[j] === "shasum"); //shasum can be "_shasum"
 				var isNodeMod = (path[j] === "node_modules");
 				if(isDep){
 					path[j] = "node_modules";
@@ -79,7 +79,7 @@ var traverseJson = function(){
 			       			foundedShasum++;
 			       		}else{//couldn't find shasum key
 			       			missingShasum++;
-			       			console.log(obj)
+			       			cli.info('Missing : ' +  obj.name);
 			       		}
 		       		
 		         }
@@ -103,13 +103,10 @@ var traverseJson = function(){
 		      timer = timer / 1000;
 		      
 		      cli.ok('Running callback');
-		      cli.ok('Build success!' + " ( took: " + timer +"s ) " );
-		       
+		      cli.ok('Build success!' + " ( took: " + timer +"s ) " );		       
 		    }
 		}); 
 	});
-
-
 }
 
 
