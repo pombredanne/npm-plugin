@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 "use strict";
+var shell = require('shelljs/global');
 var cli = require('cli');
 var fs = require('fs');
 var util = require('util');
@@ -168,9 +169,7 @@ var start = function(){
 			  //util.debug(exists ? "it's there" : "not here!");
 			  	//npm.commands.shrinkwrap({"devDependencies":true,"dev":true},function(){cli.ok('wwwwwooooopppyyy!');})
 			  	npm.commands.shrinkwrap(function(){
-			  		cli.ok('Done shrinkwrapping!');
-			  		cli.ok("Building project shrinkwrapp");
-					traverseJson()
+			  		
 			  	})
 			});
 	});
@@ -186,11 +185,16 @@ cli.main(function (args, options) {
 	console.log(options)*/
 	if(cli.command === "run"){
 		cli.ok('Running whitesource plugin...')
+		console.log(exec('npm shrinkwrap').output)
+		cli.ok('Done shrinkwrapping!');
+		cli.ok("Building project shrinkwrapp");
+		traverseJson()
 		//console.log(options);
-		start();
+		//start();
 	}
 	if(cli.command === "config"){
-		console.log("\n\n")
+/*		console.log(exec('npm shrinkwrap').output);*/
+		/*console.log("\n\n")
 		console.log("-----------------------------------------------")
 		console.log("-----------------------------------------------")
 		console.log("-----------------------------------------------")
@@ -199,6 +203,6 @@ cli.main(function (args, options) {
 		console.log("-----------------------------------------------")
 		console.log("-----------------------------------------------")
 		console.log("\n\n")
-		startPrompt();
+		startPrompt();*/
 	}
 })

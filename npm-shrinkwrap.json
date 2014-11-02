@@ -1,6 +1,6 @@
 {
   "name": "whitesource",
-  "version": "0.0.333",
+  "version": "0.0.334",
   "dependencies": {
     "cli": {
       "version": "0.6.4",
@@ -727,6 +727,11 @@
           }
         }
       }
+    },
+    "shelljs": {
+      "version": "0.3.0",
+      "from": "shelljs@",
+      "resolved": "https://registry.npmjs.org/shelljs/-/shelljs-0.3.0.tgz"
     },
     "traverse": {
       "version": "0.6.6",
