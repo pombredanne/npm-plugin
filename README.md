@@ -10,7 +10,7 @@
                                                                  
 
 
-Install using `npm install whitesource`
+Install using `npm install -g whitesource`
 
 
 More about the White Source service : [http://www.whitesourcesoftware.com/](http://www.whitesourcesoftware.com/)
