@@ -1,7 +1,5 @@
-
-
-
-
+**WhiteSource npm module**
+  
     __          ___     _ _        _____                          _ 
     \ \        / / |   (_) |      / ____|                        | |
      \ \  /\  / /| |__  _| |_ ___| (___   ___  _   _ _ __ ___ ___| |
@@ -24,7 +22,7 @@ $ npm install -g whitesource
 ```
 
 ### 2) Initial configuration
-*Create a "whitesource.config.json" file in your project root directory and input your WhiteSource Token *
+Create a "whitesource.config.json" file in your project root directory and input your WhiteSource Token 
 
 ```bash
 	{"token":"EXAMPLE TOKEN"}
@@ -33,7 +31,7 @@ $ npm install -g whitesource
 ### 2) run whitesource
 
 Locate the project you want to build and run whitesource from the project root.
-make sure there is a **package.json** file in the project root before running whitesource
+make sure you have both a **package.json** file and the **whitesource.config.json** file you created in located at project root before running whitesource run command:
 
 ```bash
 $ whitesource run
@@ -43,8 +41,8 @@ WhiteSource dependencies report is saved in the projects "whitesource.report.jso
 and posted to your WhiteSource Dashboard.
 
 
-### Examples ###
-![alt tag](https://www.squizlabs.com/__images/squiz-analytics/sneak-peek-dashboard/dashboard.png)
+### Example WhiteSource report ###
+![alt tag](http://www.whitesourcesoftware.com/wp/wp-content/uploads/2014/05/slider2_032.png)
 
 
 
