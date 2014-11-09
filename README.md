@@ -28,7 +28,7 @@ Create a "whitesource.config.json" file in your project root directory and input
 	{"token":"EXAMPLE TOKEN"}
 ```
 
-### 2) run whitesource
+### 3) run whitesource
 
 Locate the project you want to build and run whitesource from the project root.
 make sure you have both a **package.json** file and the **whitesource.config.json** file you created in located at project root before running whitesource run command:
