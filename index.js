@@ -101,7 +101,7 @@ var postJson = function(){
 
 	  // An object of options to indicate where to post to
 	  var post_options = {
-	      host: baseURL,
+	      host: (confJson.baseURL) ? confJson.baseURL : baseURL,
 	      /*host: '10.0.0.11',*/
 	      port: '80',
 	      path: '/agent',
