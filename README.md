@@ -1,5 +1,7 @@
-**WhiteSource npm module**
-  
+
+
+
+
     __          ___     _ _        _____                          _ 
     \ \        / / |   (_) |      / ____|                        | |
      \ \  /\  / /| |__  _| |_ ___| (___   ___  _   _ _ __ ___ ___| |
@@ -10,38 +12,25 @@
                                                                  
 
 
-Install using `npm install -g whitesource`
 
 
 More about the White Source service : [http://www.whitesourcesoftware.com/](http://www.whitesourcesoftware.com/)
 
+## Getting Started:
 
-## Example use
-
-### whitesource config
-Configurations keys:
-
-- Username
-
-- Password
-
-- Whitesource Token
-
-- Enable black list (default : false)
-
-- Change Traversing depth
-
-- Quit build on failure (default: false)
-
-to configure your whitesource plugin using the CLI
+### 1) Install WhiteSource **globally**.
 ```bash
-$ whitesource config
+$ npm install -g whitesource
 ```
 
- *Configurations are saved in the projects "whitesource.config.json" file (auto-generated)*
+### 2) Initial configuration
+*Create a "whitesource.config.json" file in your project root directory and input your WhiteSource Token *
 
+```bash
+	{"token":"EXAMPLE TOKEN"}
+```
 
-### to run whitesource after initial configuration 
+### 2) run whitesource
 
 Locate the project you want to build and run whitesource from the project root.
 make sure there is a **package.json** file in the project root before running whitesource
@@ -51,6 +40,12 @@ $ whitesource run
 ```
 
 WhiteSource dependencies report is saved in the projects "whitesource.report.json" file (auto-generated)
+and posted to your WhiteSource Dashboard.
+
+
+### Examples ###
+![alt tag](https://www.squizlabs.com/__images/squiz-analytics/sneak-peek-dashboard/dashboard.png)
+
 
 
 ### NOTES ###

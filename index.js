@@ -3,206 +3,239 @@
 var shell = require('shelljs/global');
 var cli = require('cli');
 var fs = require('fs');
-var util = require('util');
-var npm = require('npm');
 var traverse = require('traverse');
-var prompt = require('prompt');
 
+var prompt = require('prompt');
 prompt.message = "whitesource";
 prompt.delimiter = ">".green;
+
+var http = require('http');
+var querystring = require('querystring');
+var baseURL = 'beta.whitesourcesoftware.com';
 var runtime = new Date().valueOf();
 var foundedShasum = 0;
 var missingShasum = 0;
-var shasumFound = 0;
+var confJson = {};
+var mapShortToLong = {
+    "dependencies": "children",
+    "resolved" : "artifactId"
+};
 
-var traverseJson = function(){
-	var file = "./npm-shrinkwrap.json";
-	fs.readFile(file, 'utf8', function (err, data) {
-		 
-		 if (err) {
-		    console.log('Error: ' + err);
-		    return;
-		  }
-
-		data = JSON.parse(data);
-		var scrubbed = traverse(data).paths();
-		for (var i = 0; i<scrubbed.length; i++){
-			var path = scrubbed[i];
-			for(var j = 0; j<path.length; j++){
-				var isDep =  (path[j] === "dependencies")
-				var isVer = (path[j] === "version");
-				var isResolved = (path[j] === "resolved");
-				var isFrom = (path[j] === "from");
-				var isName = (path[j] === "name");
-				var isShasum = ((path[j] === "shasum" ) || (path[j] === "_shasum")); //shasum can be "_shasum"
-			//	var isShasum = (path[j] === "shasum"); //shasum can be "_shasum"
-				var isNodeMod = (path[j] === "node_modules");
-				if(isDep){
-					path[j] = "node_modules";
-					isNodeMod = true;
-				}
-
-				if(isShasum){
-					console.log('found');
-					shasumFound++;
-				}
-
-		        if(path[j] === path[path.length -1]
-		        	 && !isName && !isNodeMod && !isFrom
-		        	 && !isResolved && !isVer && !isShasum){
-			        	var pointerStrng = scrubbed[i].join('.').replace(/node_modules/gi, "dependencies");
-			        	var uri = scrubbed[i].join('/') + "/package.json";
-			        	//console.log('scanning for shasum at path: ' + uri )
-			        	var strArr = uri.split("");
-			        	for(var k = 0; k<strArr.length; k++){
-						   if(strArr[k] == "/"){
-						    strArr[k] = '"]["';
-						   }
-						}
-
-						var joinedStr = strArr.join('');
-						joinedStr = joinedStr.substr(0,joinedStr.lastIndexOf('['))
-						var objPointer = 'data["' + joinedStr.replace(/node_modules/gi, "dependencies");
-						var dataObjPointer = eval(objPointer);
-			       		var obj = JSON.parse(fs.readFileSync(uri, 'utf8'));
-			       		
-			       		if(obj.dist || obj._shasum){
-			       			//cli.ok('Founded dependencie shasum');
-			       			if(obj.dist){
-			       				dataObjPointer.shasum = obj.dist.shasum;
-			       				path.shasum = obj.dist.shasum;
-			       			}
-			       			if(obj._shasum){
-			       				dataObjPointer.shasum = obj._shasum
-			       				path.shasum = obj._shasum;
-			       			}
-
-			       			foundedShasum++;
-			       		}else{//couldn't find shasum key
-			       			missingShasum++;
-			       			cli.info('Missing : ' +  obj.name);
-			       		}
-		       		
-		         }
-		         /*else{//skip invalid path
-		         	console.log("skipped")
-		         }*/
-			}
-		}
-
-		cli.ok("Building dependencies report");
-		fs.writeFile("whitesource.report.json", JSON.stringify(data, null, 4), function(err) {
-		    if(err){
-		      cli.error(err);
-		    } else {
-		      cli.ok("Saving report");
-		      cli.info("Is shasum found: " + shasumFound);
-		      cli.info("Total shasum found: " + foundedShasum);
-		      cli.info("Missing shasum: " + missingShasum);
-		      cli.info("Total project dependencies: " + (missingShasum + foundedShasum));
-		      var timer = new Date().valueOf() - runtime;
-		      timer = timer / 1000;
-		      
-		      cli.ok('Running callback');
-		      cli.ok('Build success!' + " ( took: " + timer +"s ) " );		       
-		    }
-		}); 
-	});
+var buildCallback = function(){
+	var timer = new Date().valueOf() - runtime;
+	timer = timer / 1000;
+	cli.ok('Running callback');
+	cli.ok('Build success!' + " ( took: " + timer +"s ) " );
 }
 
 
-var startPrompt = function(){
-	  var schema = {
-	    properties: {
-	      "Username": {
-	        pattern: /^[a-zA-Z\s\-]+$/,
-	        message: 'Name must be only letters, spaces, or dashes',
-	        required: true
-	      },
-	      "Password": {
-	        hidden: true
-	      },
-	      "Token": {
-	        pattern: /^[a-zA-Z\s\-]+$/,
-	        message: 'Name must be only letters, spaces, or dashes',
-	        required: true
-	      },
-	      "Traverse Depth": {
-	        hidden: false
-	      },
-	      "Use black list? <yes></no>": {
-	        hidden: false
-	      },
-	      "Fail build when using invalid dependencies? <yes> | <no>": {
-	        hidden: false
-	      }
-	    }
-	  };
-	  //
-	  // Start the prompt
-	  //
-	  prompt.start();
+var refit_keys = function(o){
+    var build, key, destKey, ix, value;
 
-	  //
-	  // Get two properties from the user: email, password
-	  //
-	  prompt.get(schema, function (err, result) {
-	    //
-	    // Log the results.
-	    //
-	    var outputFilename = 'whitesource.config.json';
+    build = {};
+    for (key in o) {
 
-		fs.writeFile(outputFilename, JSON.stringify(result, null, 4), function(err) {
-		    if(err) {
-		      console.log(err);
-		    } else {
-		      cli.ok("Configuration saved!");
-		    }
-		}); 
+        // Get the destination key
+        destKey = mapShortToLong[key] || key;
+
+        // Get the value
+        value = o[key];
+
+        // If this is an object, recurse
+        if (typeof value === "object") {
+            value = refit_keys(value);
+        }
+
+        // Set it on the result using the destination key
+        build[destKey] = value;
+        if(destKey === "children"){
+        	build[destKey] = [];
+        	for (var i in value){
+        		build[destKey].push(value[i]);
+        		value[i].name = i;
+        		value[i].groupId = i;
+        		value[i].systemPath = null;
+        		value[i].scope = null;;
+        		value[i].exclusions = [];
+				value[i].classifier = null;
+        	}
+        }
+    }
+    return build;
+}
+
+
+
+
+var postJson = function(){
+	cli.ok('Posting report to WhiteSource...');
+	var origJson = JSON.parse(fs.readFileSync('./whitesource.report.json', 'utf8'));
+	var modifiedJson = refit_keys(origJson);
+	var modJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+	if(!modJson.name || !modJson.version){
+		cli.error('Node module -Name- and -Version- must be specified in module Package.json file');
+		return false;
+	}
+
+
+	var json = [{
+		dependencies:modifiedJson.children,
+		coordinates:{
+        	"artifactId": modJson.name,
+	        "version":modJson.version
+    	}
+	}]
+
+	  // Build the post string from an object
+	  var ts = new Date().valueOf();
+	  var post_data = querystring.stringify({
+		  'type' : 'UPDATE',
+		  'agent':'generic',
+		  'agentVersion':'1.0',
+		  'product':'',
+		  'productVersion':'',
+		  'token':confJson.token,
+		  'timeStamp':ts,
+		  'diff':JSON.stringify(json)
 	  });
+
+	  // An object of options to indicate where to post to
+	  var post_options = {
+	      host: baseURL,
+	      /*host: '10.0.0.11',*/
+	      port: '80',
+	      path: '/agent',
+	      method: 'POST',
+	      headers: {
+	          'Content-Type': 'application/x-www-form-urlencoded',
+	          /*'Content-Length': post_data.length*/
+	      }
+	  };
+
+	  // Set up the request
+	  var post_req = http.request(post_options, function(res) {
+	      res.setEncoding('utf8');
+	      res.on('data', function (chunk) {
+	          console.log('Response: ' + chunk);
+	          if(chunk.status == 1){
+	          	buildCallback();
+	          }else{
+	          	cli.error('Build failed due to bad request');
+	          }
+	      });
+	  });
+
+	  // post the data
+	  post_req.write(post_data);
+	  post_req.end();
+
 }
 
-var start = function(){
-	npm.load({"devDependencies":true,"dev":true},function(er){
-			fs.exists('./npm-shrinkwrap.json', function (exists) {
-				console.log(npm.commands.shrinkwrap)
-			  //util.debug(exists ? "it's there" : "not here!");
-			  	//npm.commands.shrinkwrap({"devDependencies":true,"dev":true},function(){cli.ok('wwwwwooooopppyyy!');})
-			  	npm.commands.shrinkwrap(function(){
-			  		
-			  	})
-			});
-	});
+
+var traverseJson = function(callback){
+	cli.ok("Building dependencies report");
+	var shrinkwrap = JSON.parse(fs.readFileSync("./npm-shrinkwrap.json", 'utf8'));
+	var parseData = shrinkwrap;
+	var scrubbed = traverse(parseData).paths();
+	for (var i = 0; i<scrubbed.length; i++){
+		var path = scrubbed[i];
+		for(var j = 0; j<path.length; j++){
+			var isDep =  (path[j] === "dependencies")
+			var isVer = (path[j] === "version");
+			var isResolved = (path[j] === "resolved");
+			var isFrom = (path[j] === "from");
+			var isName = (path[j] === "name");
+			var isShasum = ((path[j] === "shasum" ) || (path[j] === "_shasum")); //shasum can be "_shasum"
+		//	var isShasum = (path[j] === "shasum"); //shasum can be "_shasum"
+			var isNodeMod = (path[j] === "node_modules");
+			if(isDep){
+				path[j] = "node_modules";
+				isNodeMod = true;
+			}
+
+	        if(path[j] === path[path.length -1]
+	        	 && !isName && !isNodeMod && !isFrom
+	        	 && !isResolved && !isVer && !isShasum){
+		        	var pointerStrng = scrubbed[i].join('.').replace(/node_modules/gi, "dependencies");
+		        	var uri = scrubbed[i].join('/') + "/package.json";
+		        	//console.log('scanning for shasum at path: ' + uri )
+		        	var strArr = uri.split("");
+		        	for(var k = 0; k<strArr.length; k++){
+					   if(strArr[k] == "/"){
+					    strArr[k] = '"]["';
+					   }
+					}
+
+					var joinedStr = strArr.join('');
+					joinedStr = joinedStr.substr(0,joinedStr.lastIndexOf('['));
+					var objPointer = 'parseData["' + joinedStr.replace(/node_modules/gi, "dependencies");
+					var dataObjPointer = eval(objPointer);
+		       		var obj = JSON.parse(fs.readFileSync(uri, 'utf8'));
+
+		       		if(obj.dist || obj._shasum){
+		       			//cli.ok('Founded dependencie shasum');
+		       			if(obj.dist){
+		       				dataObjPointer.shasum = obj.dist.shasum;
+		       				path.shasum = obj.dist.shasum;
+		       			}
+		       			if(obj._shasum){
+		       				dataObjPointer.sha1 = obj._shasum;
+		       				path.sha1 = obj._shasum;
+		       			}
+
+		       			foundedShasum++;
+		       		}else{//couldn't find shasum key
+		       			missingShasum++;
+		       			cli.info('Missing : ' +  obj.name);
+		       		}
+	       		
+	         }
+		}
+	}
+
+	cli.info("Total shasum found: " + foundedShasum);
+	cli.info("Missing shasum: " + missingShasum);
+  	cli.info("Total project dependencies: " + (missingShasum + foundedShasum));
+
+	cli.ok("Saving dependencies report");
+	fs.writeFile("whitesource.report.json", JSON.stringify(parseData, null, 4), function(err) {
+	    if(err){
+	      cli.error(err);
+	    } else {
+	      callback();
+	    }
+	}); 
+
 }
-
-
 
 cli.parse(null, ['test', 'config','run']);
-
-
 cli.main(function (args, options) {
-	/*console.log(args)
-	console.log(options)*/
-	if(cli.command === "run"){
-		cli.ok('Running whitesource plugin...')
-		console.log(exec('npm shrinkwrap').output)
-		cli.ok('Done shrinkwrapping!');
-		cli.ok("Building project shrinkwrapp");
-		traverseJson()
-		//console.log(options);
-		//start();
+
+	try{
+		var noConfMsg = 'Please create a whitesource.config.json to continue';
+		confJson = fs.readFileSync('./whitesource.config.json', 'utf8',
+		function(err,data){
+			if(!err){
+				cli.error(noConfMsg);
+				return false;
+			}
+		});	
+		confJson = JSON.parse(confJson);
+	}catch(e){
+		cli.error(noConfMsg);
+		return false;
 	}
+
+	if(cli.command === "run"){
+		cli.ok('Running whitesource...');
+		exec('npm shrinkwrap');
+		cli.ok('Done shrinkwrapping!');
+		traverseJson(postJson);
+	}
+
+	if(cli.command === "test"){
+	}
+
 	if(cli.command === "config"){
-/*		console.log(exec('npm shrinkwrap').output);*/
-		/*console.log("\n\n")
-		console.log("-----------------------------------------------")
-		console.log("-----------------------------------------------")
-		console.log("-----------------------------------------------")
-		console.log("--------- Whitesource CLI configuration -------")
-		console.log("-----------------------------------------------")
-		console.log("-----------------------------------------------")
-		console.log("-----------------------------------------------")
-		console.log("\n\n")
-		startPrompt();*/
 	}
 })
