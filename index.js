@@ -213,10 +213,11 @@ cli.main(function (args, options) {
 
 	try{
 		var noConfMsg = 'Please create a whitesource.config.json to continue';
+		var fileMsg = 'whitesource.config.json is not a valid JSON file';
 		confJson = fs.readFileSync('./whitesource.config.json', 'utf8',
 		function(err,data){
 			if(!err){
-				cli.error(noConfMsg);
+				cli.error(fileMsg);
 				return false;
 			}
 		});	
