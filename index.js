@@ -10,6 +10,7 @@ prompt.message = "whitesource";
 prompt.delimiter = ">".green;
 
 var http = require('http');
+var https = require('https');
 var querystring = require('querystring');
 var baseURL = 'beta.whitesourcesoftware.com';
 var runtime = new Date().valueOf();
@@ -77,6 +78,11 @@ var postJson = function(){
 		return false;
 	}
 
+	var reqHost = (confJson.baseURL) ? confJson.baseURL : baseURL;
+	var isHttps = (confJson.https) ? confJson.https : false;
+	var port = (confJson.port) ? confJson.port : "80";
+	var product = (confJson.product) ? confJson.product : "";
+
 
 	var json = [{
 		dependencies:modifiedJson.children,
@@ -92,18 +98,20 @@ var postJson = function(){
 		  'type' : 'UPDATE',
 		  'agent':'generic',
 		  'agentVersion':'1.0',
-		  'product':'',
+		  'product':product,
 		  'productVersion':'',
 		  'token':confJson.token,
 		  'timeStamp':ts,
 		  'diff':JSON.stringify(json)
 	  });
 
+	  cli.ok("Posting to " + reqHost + ":" + port)
+
 	  // An object of options to indicate where to post to
 	  var post_options = {
-	      host: (confJson.baseURL) ? confJson.baseURL : baseURL,
+	      host: reqHost,
 	      /*host: '10.0.0.11',*/
-	      port: '80',
+	      port: port,
 	      path: '/agent',
 	      method: 'POST',
 	      headers: {
@@ -112,18 +120,29 @@ var postJson = function(){
 	      }
 	  };
 
-	  // Set up the request
+	  var onData = function (chunk){
+          cli.ok('Response: ' + chunk);
+          if(chunk.status == 1){
+          	buildCallback();
+          }else{
+          	//cli.error('Build failed due to bad request');
+          }
+      }
+
+      // Set up the request
 	  var post_req = http.request(post_options, function(res) {
 	      res.setEncoding('utf8');
-	      res.on('data', function (chunk) {
-	          cli.ok('Response: ' + chunk);
-	          if(chunk.status == 1){
-	          		buildCallback();
-	          }else{
-	          	//cli.error('Build failed due to bad request');
-	          }
-	      });
+	      res.on('data',onData);
 	  });
+
+      if(isHttps){
+      	  cli.info("Using HTTPS")
+		  var post_req = https.request(post_options, function(res) {
+		      res.setEncoding('utf8');
+		      res.on('data',onData);
+		  });
+
+      }
 
 	  // post the data
 	  post_req.write(post_data);
