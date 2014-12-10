@@ -17,16 +17,73 @@ var runtime = new Date().valueOf();
 var foundedShasum = 0;
 var missingShasum = 0;
 var confJson = {};
+var checkPolSent = false;
 var mapShortToLong = {
     "dependencies": "children",
     "resolved" : "artifactId"
 };
 
-var buildCallback = function(){
+var buildCallback = function(resJson){
 	var timer = new Date().valueOf() - runtime;
 	timer = timer / 1000;
+	
+	if(!checkPolSent){
+	  fs.writeFile("whitesource.response.json", JSON.stringify(resJson, null, 4), function(err) {
+	    if(err){
+	      cli.error(err);
+	    }
+	  }); 
+	}
+
 	cli.ok('Running callback');
-	cli.ok('Build success!' + " ( took: " + timer +"s ) " );
+	console.log(resJson)
+	var existingProjs = resJson.existingProjects;
+	var newProjs = resJson.newProjects;
+	var failBuild = false;
+	var policyDeps = [];
+	var newDeps = [];
+	//check and handle exsiting projects
+	if(existingProjs){
+		for (key in existingProjs) {
+			var projChildren = existingProjs[key].children;
+			for(var i = 0; i<projChildren.length; i++){
+					if(projChildren[i].policy){
+						policyDeps.push(projChildren[i]);
+						failBuild = true;
+					}
+			}
+		}
+	}
+
+	//check and handle new projects
+	if(newProjs){
+		for (key in newProjs) {
+			var projChildren = newProjs[key].children;
+			for(var i = 0; i<projChildren.length; i++){
+					newDeps.push(projChildren[i]);
+					if(projChildren[i].policy){
+						policyDeps.push(projChildren[i]);
+						failBuild = true;
+					}
+			}
+		}
+	}
+
+	if(policyDeps.length != 0){
+		cli.error("Policy violations found exiting build")
+		cli.info("See list of violations:")
+		for(var i = 0; i<policyDeps.length; i++){
+			cli.info(policyDeps[i].resource.displayName + " : " + policyDeps[i].policy.displayName);
+		}
+	}else{
+	   cli.ok("No policy violations found");
+	   if(checkPolSent){
+	   		cli.ok('Build success!' + " ( took: " + timer +"s ) " );
+	   }else{
+	   	checkPolSent = true;
+	   	postJson()
+	   }
+	}
 }
 
 
@@ -87,14 +144,14 @@ var postJson = function(){
 	var reqHost = (confJson.baseURL) ? confJson.baseURL : baseURL;
 	var isHttps = (confJson.https) ? confJson.https : false;
 	var port = (confJson.port) ? confJson.port : "80";
-	var productName = (confJson.productName) ? confJson.productName : "";
-	var productVer = (confJson.productVersion) ? confJson.productVersion : "";
+	var productName = (confJson.productName) ? confJson.productName : modJson.name;
+	var productVer = (confJson.productVersion) ? confJson.productVersion : modJson.version;
 	var productToken = (confJson.productToken) ? confJson.productToken : "";
-	var projectName = (confJson.projectName) ? confJson.projectName : "";
-	var projectVer = (confJson.projectVer) ? confJson.projectVer : "";
+	var projectName = (confJson.projectName) ? confJson.projectName : modJson.name;
+	var projectVer = (confJson.projectVer) ? confJson.projectVer : modJson.version;
 	var projectToken = (confJson.projectToken) ? confJson.projectToken : "";
 	var ts = new Date().valueOf();
-
+	var post_req;
 
 	if(!confJson.apiKey){
 		cli.error('Cant find API Key, please make sure you input your whitesource API token in the whitesource.config file.');
@@ -114,9 +171,12 @@ var postJson = function(){
 	        "version":modJson.version
     	}
 	}]
+	var checkPol = (modJson.checkPolicies) ? modJson.checkPolicies : true;
 
-	  var myPost = {
-		  'type' : 'UPDATE',
+	cli.info("Request type " + ((checkPol && !checkPolSent) ? 'CHECK_POLICIES' : 'UPDATE'));
+
+	var myPost = {
+		  'type' : (checkPol && !checkPolSent) ? 'CHECK_POLICIES' : 'UPDATE',
 		  'agent':'generic',
 		  'agentVersion':'1.0',
 		  'product':productName,
@@ -128,6 +188,7 @@ var postJson = function(){
 		  'diff':JSON.stringify(json)
 	  }
 
+	  //if both Project-Token and ProductToken send the Project-Token
 	  if(projectToken){
 		myPost.projectToken = projectToken;
 	  }else if(productToken){
@@ -152,34 +213,35 @@ var postJson = function(){
 	      }
 	  };
 
-	  var onData = function (chunk){
-	      cli.ok('Response: ' + chunk);
-	      if(chunk.status == 1){
-	      	buildCallback();
-	      }else{
-	      	//cli.error('Build failed due to bad request');
-	      }
+	  var callback = function(res){
+	  	  var str = "";
+  		  res.on('data', function (chunk){
+		    str += chunk;
+		    //TODO:draw post_req progress.
+		  });
+
+		  res.on('end', function(){
+		  	var resJson = JSON.parse(str);
+  	        if(resJson.status == 1){
+	      	  buildCallback(resJson);
+	        }else{
+  	      	  //cli.error('Build failed due to bad request');
+	        }
+		    // your code here if you want to use the results !
+		  });
 	  }
 
       // Set up the request
-	  var post_req = http.request(post_options, function(res) {
-	      res.setEncoding('utf8');
-	      res.on('data',onData);
-	  });
+	  post_req = http.request(post_options, callback);
 
       if(isHttps){
       	  cli.info("Using HTTPS")
-		  var post_req = https.request(post_options, function(res) {
-		      res.setEncoding('utf8');
-		      res.on('data',onData);
-		  });
-
+		  post_req = https.request(post_options, callback);
       }
 
 	  // post the data
 	  post_req.write(post_data);
 	  post_req.end();
-
 }
 
 
@@ -278,6 +340,11 @@ cli.main(function (args, options) {
 	}
 
 	if(cli.command === "run"){
+		try {
+			JSON.parse(fs.readFileSync('./whitesource.report.json', 'utf8'));
+		}catch(e){
+		    cli.ok('Running whitesource for the first time');
+		}
 		cli.ok('Running whitesource...');
 		exec('npm shrinkwrap');
 		cli.ok('Done shrinkwrapping!');
