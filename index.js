@@ -72,7 +72,13 @@ var postJson = function(){
 	cli.ok('Posting report to WhiteSource...');
 	var origJson = JSON.parse(fs.readFileSync('./whitesource.report.json', 'utf8'));
 	var modifiedJson = refit_keys(origJson);
-	var modJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+	try{
+		var modJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+	}catch(e){
+		cli.error('Problem reading Package.json, please check the file is a valid JSON');
+		return false;
+	}
+
 	if(!modJson.name || !modJson.version){
 		cli.error('Node module -Name- and -Version- must be specified in module Package.json file');
 		return false;
@@ -81,8 +87,25 @@ var postJson = function(){
 	var reqHost = (confJson.baseURL) ? confJson.baseURL : baseURL;
 	var isHttps = (confJson.https) ? confJson.https : false;
 	var port = (confJson.port) ? confJson.port : "80";
-	var product = (confJson.product) ? confJson.product : "";
+	var productName = (confJson.productName) ? confJson.productName : "";
+	var productVer = (confJson.productVersion) ? confJson.productVersion : "";
+	var productToken = (confJson.productToken) ? confJson.productToken : "";
+	var projectName = (confJson.projectName) ? confJson.projectName : "";
+	var projectVer = (confJson.projectVer) ? confJson.projectVer : "";
+	var projectToken = (confJson.projectToken) ? confJson.projectToken : "";
+	var ts = new Date().valueOf();
 
+
+	if(!confJson.apiKey){
+		cli.error('Cant find API Key, please make sure you input your whitesource API token in the whitesource.config file.');
+		return false
+	}
+
+	
+	if(projectToken && productToken){
+		cli.error('Cant use both project Token & product Token please select use only one token,to fix this open the whitesource.config file and remove one of the tokens.');
+		return false
+	}
 
 	var json = [{
 		dependencies:modifiedJson.children,
@@ -92,18 +115,27 @@ var postJson = function(){
     	}
 	}]
 
-	  // Build the post string from an object
-	  var ts = new Date().valueOf();
-	  var post_data = querystring.stringify({
+	  var myPost = {
 		  'type' : 'UPDATE',
 		  'agent':'generic',
 		  'agentVersion':'1.0',
-		  'product':product,
-		  'productVersion':'',
-		  'token':confJson.token,
+		  'product':productName,
+		  'productVer':productVer,
+		  'projectName':projectName,
+		  'projectVer':projectVer,
+		  'token':confJson.apiKey,
 		  'timeStamp':ts,
 		  'diff':JSON.stringify(json)
-	  });
+	  }
+
+	  if(projectToken){
+		myPost.projectToken = projectToken;
+	  }else if(productToken){
+	  	myPost.productToken = productToken;
+	  }
+
+	  // Build the post string from an object
+	  var post_data = querystring.stringify(myPost);
 
 	  cli.ok("Posting to " + reqHost + ":" + port)
 
@@ -121,13 +153,13 @@ var postJson = function(){
 	  };
 
 	  var onData = function (chunk){
-          cli.ok('Response: ' + chunk);
-          if(chunk.status == 1){
-          	buildCallback();
-          }else{
-          	//cli.error('Build failed due to bad request');
-          }
-      }
+	      cli.ok('Response: ' + chunk);
+	      if(chunk.status == 1){
+	      	buildCallback();
+	      }else{
+	      	//cli.error('Build failed due to bad request');
+	      }
+	  }
 
       // Set up the request
 	  var post_req = http.request(post_options, function(res) {
@@ -229,7 +261,6 @@ var traverseJson = function(callback){
 
 cli.parse(null, ['test', 'config','run']);
 cli.main(function (args, options) {
-
 	try{
 		var noConfMsg = 'Please create a whitesource.config.json to continue';
 		var fileMsg = 'whitesource.config.json is not a valid JSON file';
