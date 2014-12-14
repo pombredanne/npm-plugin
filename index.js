@@ -137,6 +137,12 @@ var postJson = function(){
 
       if(isHttps){
       	  cli.info("Using HTTPS")
+      	  
+      	  post_options.headers = {
+	          'Content-Type': 'application/x-www-form-urlencoded',
+	          'Content-Length': post_data.length
+	      }
+
 		  var post_req = https.request(post_options, function(res) {
 		      res.setEncoding('utf8');
 		      res.on('data',onData);
@@ -144,10 +150,14 @@ var postJson = function(){
 
       }
 
-	  // post the data
-	  post_req.write(post_data);
-	  post_req.end();
+      try {
+      	// post the data
+		  post_req.write(post_data);
+		  post_req.end();
 
+      }catch(e){
+      	console.log(e)
+      }
 }
 
 
