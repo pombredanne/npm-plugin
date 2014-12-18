@@ -12,21 +12,91 @@ prompt.delimiter = ">".green;
 var http = require('http');
 var https = require('https');
 var querystring = require('querystring');
-var baseURL = 'beta.whitesourcesoftware.com';
+var baseURL = 'saas.whitesourcesoftware.com';
 var runtime = new Date().valueOf();
 var foundedShasum = 0;
 var missingShasum = 0;
 var confJson = {};
+var checkPolEnabled = false;
+var checkPolSent = false;
 var mapShortToLong = {
     "dependencies": "children",
     "resolved" : "artifactId"
 };
 
-var buildCallback = function(){
+var buildCallback = function(resJson){
 	var timer = new Date().valueOf() - runtime;
 	timer = timer / 1000;
+	
+
+	var finish = function(){
+		cli.ok('Build success!' + " ( took: " + timer +"s ) " );
+		process.exit(1);
+	}
+
+
+	if(!checkPolSent){
+	  fs.writeFile("whitesource.response.json", JSON.stringify(resJson, null, 4),function(err){
+	    if(err){
+	      cli.error(err);
+	    }
+	  }); 
+	}
+
 	cli.ok('Running callback');
-	cli.ok('Build success!' + " ( took: " + timer +"s ) " );
+	if(checkPolEnabled){
+		console.log(resJson)
+		var existingProjs = resJson.existingProjects;
+		var newProjs = resJson.newProjects;
+		var failBuild = false;
+		var policyDeps = [];
+		var newDeps = [];
+		//check and handle exsiting projects
+		if(existingProjs){
+			for (key in existingProjs) {
+				var projChildren = existingProjs[key].children;
+				for(var i = 0; i<projChildren.length; i++){
+						if(projChildren[i].policy){
+							policyDeps.push(projChildren[i]);
+							failBuild = true;
+						}
+				}
+			}
+		}
+
+		//check and handle new projects
+		if(newProjs){
+			for (key in newProjs) {
+				var projChildren = newProjs[key].children;
+				for(var i = 0; i<projChildren.length; i++){
+						newDeps.push(projChildren[i]);
+						if(projChildren[i].policy){
+							policyDeps.push(projChildren[i]);
+							failBuild = true;
+						}
+				}
+			}
+		}
+		if(policyDeps.length != 0){
+			cli.error("Policy violations found exiting build")
+			cli.info("See list of violations:")
+			for(var i = 0; i<policyDeps.length; i++){
+				cli.info(policyDeps[i].resource.displayName + " : " + policyDeps[i].policy.displayName);
+			}
+		}else{
+	/*		finish();
+			return false; //disable checkPolicy.*/
+		   cli.ok("No policy violations found");
+		   if(checkPolSent){
+		   		finish();
+		   }else{
+		   	checkPolSent = true;
+		   	postJson()
+		   }
+		}
+	}
+
+	finish();
 }
 
 
@@ -69,20 +139,43 @@ var refit_keys = function(o){
 
 
 var postJson = function(){
-	cli.ok('Posting report to WhiteSource...');
+	cli.ok('Getting ready to post report to WhiteSource...');
 	var origJson = JSON.parse(fs.readFileSync('./whitesource.report.json', 'utf8'));
 	var modifiedJson = refit_keys(origJson);
-	var modJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+	try{
+		var modJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+	}catch(e){
+		cli.error('Problem reading Package.json, please check the file is a valid JSON');
+		return false;
+	}
+
 	if(!modJson.name || !modJson.version){
 		cli.error('Node module -Name- and -Version- must be specified in module Package.json file');
 		return false;
 	}
 
 	var reqHost = (confJson.baseURL) ? confJson.baseURL : baseURL;
-	var isHttps = (confJson.https) ? confJson.https : false;
-	var port = (confJson.port) ? confJson.port : "80";
-	var product = (confJson.product) ? confJson.product : "";
+	var isHttps = (confJson.https) ? confJson.https : true;
+	var port = (confJson.port) ? confJson.port : "443";
+	var productName = (confJson.productName) ? confJson.productName : modJson.name;
+	var productVer = (confJson.productVersion) ? confJson.productVersion : modJson.version;
+	var productToken = (confJson.productToken) ? confJson.productToken : "";
+	var projectName = (confJson.projectName) ? confJson.projectName : modJson.name;
+	var projectVer = (confJson.projectVer) ? confJson.projectVer : modJson.version;
+	var projectToken = (confJson.projectToken) ? confJson.projectToken : "";
+	var ts = new Date().valueOf();
+	var post_req;
 
+	if(!confJson.apiKey){
+		cli.error('Cant find API Key, please make sure you input your whitesource API token in the whitesource.config file.');
+		return false
+	}
+
+	
+	if(projectToken && productToken){
+		cli.error('Cant use both project Token & product Token please select use only one token,to fix this open the whitesource.config file and remove one of the tokens.');
+		return false
+	}
 
 	var json = [{
 		dependencies:modifiedJson.children,
@@ -91,19 +184,35 @@ var postJson = function(){
 	        "version":modJson.version
     	}
 	}]
+	var checkPol = (modJson.checkPolicies) ? modJson.checkPolicies : true;
+	var myReqType = ((checkPol && !checkPolSent) ? 'CHECK_POLICIES' : 'UPDATE');
 
-	  // Build the post string from an object
-	  var ts = new Date().valueOf();
-	  var post_data = querystring.stringify({
-		  'type' : 'UPDATE',
+	if(!checkPolEnabled){
+		myReqType = 'UPDATE';
+	}
+
+	var myPost = {
+		  'type' : myReqType,
 		  'agent':'generic',
 		  'agentVersion':'1.0',
-		  'product':product,
-		  'productVersion':'',
-		  'token':confJson.token,
+		  'product':productName,
+		  'productVer':productVer,
+		  'projectName':projectName,
+		  'projectVer':projectVer,
+		  'token':confJson.apiKey,
 		  'timeStamp':ts,
 		  'diff':JSON.stringify(json)
-	  });
+	  }
+
+	  //if both Project-Token and ProductToken send the Project-Token
+	  if(projectToken){
+		myPost.projectToken = projectToken;
+	  }else if(productToken){
+	  	myPost.productToken = productToken;
+	  }
+
+	  // Build the post string from an object
+	  var post_data = querystring.stringify(myPost);
 
 	  cli.ok("Posting to " + reqHost + ":" + port)
 
@@ -120,44 +229,40 @@ var postJson = function(){
 	      }
 	  };
 
-	  var onData = function (chunk){
-          cli.ok('Response: ' + chunk);
-          if(chunk.status == 1){
-          	buildCallback();
-          }else{
-          	//cli.error('Build failed due to bad request');
-          }
-      }
+	  var callback = function(res){
+	  	  var str = [];
+  		  res.on('data', function (chunk){
+		    str += (chunk);
+		    //TODO:draw post_req progress.
+		  });
+
+		  res.on('end', function(){
+		  	var resJson = JSON.parse(str);
+  	        if(resJson.status == 1){
+	      	  buildCallback(resJson);
+	        }else{
+  	      	  cli.error(JSON.stringify(resJson));
+  	      	  process.exit(1);
+	        }
+		    // your code here if you want to use the results !
+		  });
+	  }
 
       // Set up the request
-	  var post_req = http.request(post_options, function(res) {
-	      res.setEncoding('utf8');
-	      res.on('data',onData);
-	  });
+	  post_req = http.request(post_options, callback);
 
       if(isHttps){
       	  cli.info("Using HTTPS")
-      	  
       	  post_options.headers = {
 	          'Content-Type': 'application/x-www-form-urlencoded',
 	          'Content-Length': post_data.length
 	      }
-
-		  var post_req = https.request(post_options, function(res) {
-		      res.setEncoding('utf8');
-		      res.on('data',onData);
-		  });
-
+		  post_req = https.request(post_options, callback);
       }
 
-      try {
-      	// post the data
-		  post_req.write(post_data);
-		  post_req.end();
-
-      }catch(e){
-      	console.log(e)
-      }
+	  // post the data
+	  post_req.write(post_data);
+	  post_req.end();
 }
 
 
@@ -239,7 +344,6 @@ var traverseJson = function(callback){
 
 cli.parse(null, ['test', 'config','run']);
 cli.main(function (args, options) {
-
 	try{
 		var noConfMsg = 'Please create a whitesource.config.json to continue';
 		var fileMsg = 'whitesource.config.json is not a valid JSON file';
@@ -257,6 +361,11 @@ cli.main(function (args, options) {
 	}
 
 	if(cli.command === "run"){
+		try {
+			JSON.parse(fs.readFileSync('./whitesource.report.json', 'utf8'));
+		}catch(e){
+		    cli.ok('Running whitesource for the first time');
+		}
 		cli.ok('Running whitesource...');
 		exec('npm shrinkwrap');
 		cli.ok('Done shrinkwrapping!');
