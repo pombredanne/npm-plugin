@@ -25,7 +25,7 @@ $ npm install -g whitesource
 Create a "whitesource.config.json" file in your project root directory and input your WhiteSource Token 
 
 ```bash
-	{"token":"EXAMPLE TOKEN"}
+	{"apiKey":"EXAMPLE TOKEN"}
 ```
 
 ### 3) run whitesource
