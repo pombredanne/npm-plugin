@@ -154,8 +154,13 @@ var postJson = function(){
 		return false;
 	}
 
+	var isHttps = true;
+	
+	if(typeof(confJson.https) !== "undefined"){
+		 isHttps = confJson.https;
+	}
+	
 	var reqHost = (confJson.baseURL) ? confJson.baseURL : baseURL;
-	var isHttps = (confJson.https) ? confJson.https : true;
 	var port = (confJson.port) ? confJson.port : "443";
 	var productName = (confJson.productName) ? confJson.productName : modJson.name;
 	var productVer = (confJson.productVersion) ? confJson.productVersion : modJson.version;
@@ -193,7 +198,7 @@ var postJson = function(){
 
 	var myPost = {
 		  'type' : myReqType,
-		  'agent':'generic',
+		  'agent':'npm-plugin',
 		  'agentVersion':'1.0',
 		  'product':productName,
 		  'productVer':productVer,

@@ -1,7 +1,3 @@
 {
-	"token":"f6f2d82b-de26-4cc0-8536-48679d2224c8",
-	"baseURL" : "beta.whitesourcesoftware.com",
-	"https" : false,
-	"port" : "80",
-	"product" : "test product"
+	"apiKey":"f6f2d82b-de26-4cc0-8536-48679d2224c8"
 }
