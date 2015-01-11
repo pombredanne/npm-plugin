@@ -4,11 +4,9 @@ var shell = require('shelljs/global');
 var cli = require('cli');
 var fs = require('fs');
 var traverse = require('traverse');
-
 var prompt = require('prompt');
 prompt.message = "whitesource";
 prompt.delimiter = ">".green;
-
 var http = require('http');
 var https = require('https');
 var querystring = require('querystring');
@@ -31,7 +29,7 @@ var buildCallback = function(resJson){
 
 	var finish = function(){
 		cli.ok('Build success!' + " ( took: " + timer +"s ) " );
-		process.exit(1);
+		process.exit(0);
 	}
 
 
