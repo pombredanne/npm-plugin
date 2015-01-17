@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 "use strict";
 var shell = require('shelljs/global');
 var cli = require('cli');
