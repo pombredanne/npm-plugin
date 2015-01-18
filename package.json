@@ -1,6 +1,6 @@
 {
   "name": "whitesource",
-  "version": "0.0.395",
+  "version": "0.0.396",
   "description": "whitesource node module",
   "preferGlobal": true,
   "bin": {
@@ -13,7 +13,8 @@
   },
   "main": "./bin/whitesource",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall":".bin/npm-postinstall"
   },
   "keywords": [
     "whitesource"
