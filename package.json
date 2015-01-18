@@ -1,6 +1,6 @@
 {
   "name": "whitesource",
-  "version": "0.0.394",
+  "version": "0.0.395",
   "description": "whitesource node module",
   "preferGlobal": true,
   "bin": {
@@ -11,7 +11,7 @@
     "type": "git",
     "url": "https://github.com/whitesource/npm-plugin.git"
   },
-  "main": "bin/whitesource",
+  "main": "./bin/whitesource",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
