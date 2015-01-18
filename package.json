@@ -13,8 +13,7 @@
   },
   "main": "./bin/whitesource",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall":".bin/npm-postinstall"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "whitesource"
