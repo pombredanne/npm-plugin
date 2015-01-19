@@ -16,7 +16,12 @@
     "whitesource"
   ],
   "author": "Doron Gour",
-  "license": "ISC",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  ],
   "dependencies": {
     "cli": "^0.6.4",
     "npm": "^2.0.2",
