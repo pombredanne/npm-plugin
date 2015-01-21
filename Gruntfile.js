@@ -57,7 +57,7 @@ grunt.initConfig({
   grunt.registerTask('default', [
     //'newer:jshint',
     'lineending',
-    'uglify',
+    /*'uglify',*/
     /*'file_append:default_options'*/
   ]);
 };
