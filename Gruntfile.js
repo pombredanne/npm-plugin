@@ -20,7 +20,7 @@ grunt.initConfig({
   uglify: {
     my_target: {
       files: {
-        'bin/whitesource': ['bin/whitesource.src']
+        'bin/whitesource.js': ['bin/whitesource.js']
       }
     }
   },
@@ -42,11 +42,11 @@ grunt.initConfig({
  lineending: {
     dist: {
       options: {
-        overwrite: true
+        //overwrite: true
       },
       files: {
-        'bin/whitesource.src': ['bin/whitesource.js'],
-        'package.json': ['package.json']
+        'bin/whitesource.js': 'bin/whitesource.js'
+        //'package.json': ['package.json']
       }
     }
   }
