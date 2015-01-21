@@ -1,6 +1,6 @@
 {
   "name": "whitesource",
-  "version": "0.0.41",
+  "version": "0.0.42",
   "description": "whitesource node module",
   "preferGlobal": true,
   "bin": {
@@ -17,6 +17,12 @@
   ],
   "author": "Doron Gour",
   "license": "ISC",
+  "devDependencies": {
+    "grunt": "*",
+    "grunt-cli": "*",
+    "grunt-contrib-uglify": "*",
+    "grunt-file-append": "0.0.6"
+  },
   "dependencies": {
     "cli": "^0.6.4",
     "npm": "^2.0.2",
