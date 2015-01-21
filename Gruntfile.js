@@ -12,6 +12,8 @@ module.exports = function (grunt) {// Project configuration.
 
 grunt.loadNpmTasks('grunt-contrib-uglify');
 grunt.loadNpmTasks('grunt-file-append');
+grunt.loadNpmTasks('grunt-lineending');
+
 
 
 grunt.initConfig({
@@ -35,6 +37,18 @@ grunt.initConfig({
         }
       ]
     }
+  },
+
+ lineending: {
+    dist: {
+      options: {
+        overwrite: true
+      },
+      files: {
+        'bin/whitesource.src': ['bin/whitesource.src'],
+        'package.json': ['package.json']
+      }
+    }
   }
 
 });
@@ -42,6 +56,7 @@ grunt.initConfig({
 
   grunt.registerTask('default', [
     //'newer:jshint',
+    'lineending',
     'uglify',
     /*'file_append:default_options'*/
   ]);
