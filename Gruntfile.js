@@ -45,7 +45,7 @@ grunt.initConfig({
         overwrite: true
       },
       files: {
-        'bin/whitesource.src': ['bin/whitesource.src'],
+        'bin/whitesource.src': ['bin/whitesource.js'],
         'package.json': ['package.json']
       }
     }

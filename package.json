@@ -1,17 +1,17 @@
 {
   "name": "whitesource",
-  "version": "0.0.45",
+  "version": "0.0.46",
   "description": "whitesource node module",
   "preferGlobal": true,
   "bin": {
-    "whitesource": "./bin/whitesource"
+    "whitesource": "./bin/whitesource.js"
   },
   "homepage": "https://github.com/whitesource/npm-plugin",
   "repository": {
     "type": "git",
     "url": "https://github.com/whitesource/npm-plugin.git"
   },
-  "main": "./bin/whitesource",
+  "main": "./bin/whitesource.js",
   "keywords": [
     "whitesource"
   ],
