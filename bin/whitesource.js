@@ -3,7 +3,6 @@
 'use strict';
 
 process.title = 'whitesource';
-
 var shell = require('shelljs/global');
 var cli = require('cli');
 var fs = require('fs');
