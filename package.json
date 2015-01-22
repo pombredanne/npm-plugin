@@ -27,7 +27,8 @@
     "grunt-cli": "*",
     "grunt-contrib-uglify": "*",
     "grunt-file-append": "0.0.6",
-    "grunt-lineending": "^0.2.4"
+    "grunt-lineending": "^0.2.4",
+    "grunt-whitesource": "*"
   },
   "dependencies": {
     "cli": "^0.6.4",

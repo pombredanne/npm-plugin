@@ -13,6 +13,7 @@ module.exports = function (grunt) {// Project configuration.
 grunt.loadNpmTasks('grunt-contrib-uglify');
 grunt.loadNpmTasks('grunt-file-append');
 grunt.loadNpmTasks('grunt-lineending');
+grunt.loadNpmTasks('grunt-whitesource');
 
 
 
@@ -49,14 +50,33 @@ grunt.initConfig({
         //'package.json': ['package.json']
       }
     }
-  }
+  },
+
+  whitesource: {
+    options: {
+          'apiKey':'',
+          'https':'',
+          'baseURL':'',
+          'port' :'',
+          'productName':'',
+          'productVersion':'',
+          'productToken':'',
+          'projectName':'',
+          'projectVer':'',
+          'projectToken':''
+    },
+    your_target: {
+      // Target-specific file lists and/or options go here.
+    },
+  },
 
 });
 
 
   grunt.registerTask('default', [
+    "whitesource"
     //'newer:jshint',
-    'lineending',
+    /*'lineending',*/
     /*'uglify',*/
     /*'file_append:default_options'*/
   ]);
