@@ -18,7 +18,7 @@ var runtime = new Date().valueOf();
 var foundedShasum = 0;
 var missingShasum = 0;
 var confJson = {};
-var checkPolEnabled = false;
+
 var checkPolSent = false;
 var mapShortToLong = {
     "dependencies": "children",
@@ -45,7 +45,7 @@ var buildCallback = function(resJson){
 	}
 
 	cli.ok('Running callback');
-	if(checkPolEnabled){
+	if(checkPolEnabled()){
 		console.log(resJson)
 		var existingProjs = resJson.existingProjects;
 		var newProjs = resJson.newProjects;
@@ -190,10 +190,10 @@ var postJson = function(){
 	        "version":modJson.version
     	}
 	}]
-	var checkPol = (modJson.checkPolicies) ? modJson.checkPolicies : true;
+	var checkPol = (confJson.checkPolicies) ? confJson.checkPolicies : true;
 	var myReqType = ((checkPol && !checkPolSent) ? 'CHECK_POLICIES' : 'UPDATE');
 
-	if(!checkPolEnabled){
+	if(!checkPolEnabled()){
 		myReqType = 'UPDATE';
 	}
 
@@ -209,7 +209,7 @@ var postJson = function(){
 		  'timeStamp':ts,
 		  'diff':JSON.stringify(json)
 	  }
-
+		console.log(myPost);
 	  //if both Project-Token and ProductToken send the Project-Token
 	  if(projectToken){
 		myPost.projectToken = projectToken;
@@ -271,6 +271,9 @@ var postJson = function(){
 	  post_req.end();
 }
 
+var checkPolEnabled = function(){
+	return (confJson.checkPolicies) ? confJson.checkPolicies : false;
+}
 
 var traverseJson = function(callback){
 	cli.ok("Building dependencies report");
