@@ -18,7 +18,7 @@ var runtime = new Date().valueOf();
 var foundedShasum = 0;
 var missingShasum = 0;
 var confJson = {};
-
+var globalTunnel = require('global-tunnel');
 var checkPolSent = false;
 var mapShortToLong = {
     "dependencies": "children",
@@ -160,6 +160,18 @@ var postJson = function(){
 	if(typeof(confJson.https) !== "undefined"){
 		 isHttps = confJson.https;
 	}
+
+ 	
+ 	if(confJson.proxy){
+	 	globalTunnel.initialize({
+		  host: confJson.proxy,
+		  port: confJson.proxyPort
+		  //sockets: 50 // for each http and https 
+		});
+
+		cli.ok('Using proxy: ' + confJson.proxy + ":" + confJson.proxyPort);
+ 	}
+	
 	
 	var reqHost = (confJson.baseURL) ? confJson.baseURL : baseURL;
 	var port = (confJson.port) ? confJson.port : "443";
@@ -209,7 +221,7 @@ var postJson = function(){
 		  'timeStamp':ts,
 		  'diff':JSON.stringify(json)
 	  }
-		console.log(myPost);
+		//console.log(myPost);
 	  //if both Project-Token and ProductToken send the Project-Token
 	  if(projectToken){
 		myPost.projectToken = projectToken;
