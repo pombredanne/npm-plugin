@@ -388,7 +388,11 @@ cli.main(function (args, options) {
 		    cli.ok('Running whitesource for the first time');
 		}
 		cli.ok('Running whitesource...');
-		exec('npm shrinkwrap');
+		if(confJson.devDep === "true"){
+			exec('npm shrinkwrap --dev');
+		}else{
+			exec('npm shrinkwrap');
+		}
 		cli.ok('Done shrinkwrapping!');
 		traverseJson(postJson);
 	}
