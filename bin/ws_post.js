@@ -5,38 +5,59 @@ var cli = require('cli');
 var fs = require('fs');
 var globalTunnel = require('global-tunnel');
 var request = require('request');
+
 var WsHelper = require('./ws_helper');
 
 var WsPost = exports;
 exports.constructor = function WsPost(){};
 
-WsPost.postBowerUpdateJson = function(report,confJson){
-	cli.ok('Getting ready to post report to WhiteSource...');
-	var isHttps = true;
+var baseURL = 'saas.whitesourcesoftware.com';
+
+
+WsPost.getPostOptions = function(confJson,report){
+	var useHttps = true;
 
 	if(typeof(confJson.https) !== "undefined"){
-		 isHttps = confJson.https;
+		 useHttps = confJson.https;
 	}
 
-
-	var protocol = (isHttps) ? "https://" : "http://";
-	var checkPol = (confJson.checkPolicies) ? confJson.checkPolicies : true;
-	var myReqType = ((checkPol && !checkPolSent) ? 'CHECK_POLICIES' : 'UPDATE');
-
-	if(!confJson.checkPolEnabled){
-		myReqType = 'UPDATE';
+	var options = {
+		isHttps:useHttps,
+		protocol:( (useHttps) ? "https://" : "http://"),
+		checkPol:((confJson.checkPolicies) ? confJson.checkPolicies : true),
+		myReqType:'UPDATE',
+		reqHost:( (confJson.baseURL) ? confJson.baseURL : baseURL),
+		port:( (confJson.port) ? confJson.port : "443"),
+		productName : ( (confJson.productName) ? confJson.productName : report.name),
+		productVer  : ( (confJson.productVersion) ? confJson.productVersion : report.version),
+		productToken : ( (confJson.productToken) ? confJson.productToken : "" ),
+		projectName : ( (confJson.projectName) ? confJson.projectName : report.name ),
+		projectVer : ( (confJson.projectVer) ? confJson.projectVer : report.version ),
+		projectToken : ( (confJson.projectToken) ? confJson.projectToken : "" ),
+		apiKey: confJson.apiKey,
+		ts:new Date().valueOf()
 	}
+	
+	options.postURL = (options.protocol + options.reqHost + ":" + options.port + "/agent");
 
-	var reqHost = (confJson.baseURL) ? confJson.baseURL : baseURL;
-	var port = (confJson.port) ? confJson.port : "443";
-	var productName = (confJson.productName) ? confJson.productName : report.name;
-	var productVer = (confJson.productVersion) ? confJson.productVersion : report.version;
-	var productToken = (confJson.productToken) ? confJson.productToken : "";
-	var projectName = (confJson.projectName) ? confJson.projectName : report.name;
-	var projectVer = (confJson.projectVer) ? confJson.projectVer : report.version;
-	var projectToken = (confJson.projectToken) ? confJson.projectToken : "";
-	var ts = new Date().valueOf();
-	var postURL = protocol + reqHost + ":" + port + "/agent";
+	//add proxy if set.
+	if(confJson.proxy){
+	 	globalTunnel.initialize({
+		  host: confJson.proxy,
+		  port: confJson.proxyPort
+		  //sockets: 50 // for each http and https 
+		});
+		cli.ok('Using proxy: ' + confJson.proxy + ":" + confJson.proxyPort);
+	 }
+
+	 return options;
+}
+
+
+
+WsPost.postBowerUpdateJson = function(report,confJson,postCallback){
+	cli.ok('Getting ready to post -bower- report to WhiteSource...');
+	var reqOpt = WsPost.getPostOptions(confJson,report);
 
 	if(!confJson.apiKey){
 		//console.log(confJson.apiKey)
@@ -44,7 +65,7 @@ WsPost.postBowerUpdateJson = function(report,confJson){
 		return false
 	}
 
-	if(projectToken && productToken){
+	if(reqOpt.projectToken && reqOpt.productToken){
 		cli.error('Cant use both project Token & product Token please select use only one token,to fix this open the whitesource.config file and remove one of the tokens.');
 		return false
 	}
@@ -59,40 +80,46 @@ WsPost.postBowerUpdateJson = function(report,confJson){
 		}}]
 
 	var myPost = {
-		  'type' : myReqType,
+		  'type' : reqOpt.myReqType,
 		  'agent':'bower-plugin',
 		  'agentVersion':'1.0',
-		  'product':productName,
-		  'productVer':productVer,
-		  'projectName':projectName,
-		  'projectVer':projectVer,
-		  'token':confJson.apiKey,
-		  'timeStamp':ts,
+		  'product':reqOpt.productName,
+		  'productVer':reqOpt.productVer,
+		  'projectName':reqOpt.projectName,
+		  'projectVer':reqOpt.projectVer,
+		  'token':reqOpt.apiKey,
+		  'timeStamp':reqOpt.ts,
 		  'diff':JSON.stringify(json)
 	  }
 	  //if both Project-Token and ProductToken send the Project-Token
-	  if(projectToken){
-		myPost.projectToken = projectToken;
-	  }else if(productToken){
-		myPost.productToken = productToken;
+	  if(reqOpt.projectToken){
+		myPost.projectToken = reqOpt.projectToken;
+	  }else if(reqOpt.productToken){
+		myPost.productToken = reqOpt.productToken;
 	  }
 
 	  WsHelper.saveReportFile(json,'whitesource-bower.report.json');
 	  WsHelper.saveReportFile(myPost,'whitesource-bower.report-post.json');
 	  
-	  cli.ok("Posting to " + reqHost + ":" + port)
-	  request.post(postURL,function optionalCallback(err, httpResponse, body) {
-		  if (err) {
-		    console.error('upload failed:', err);
-		    console.error(JSON.stringify(httpResponse));
-		    console.error(JSON.stringify(body));
-		  	process.exit(1);
+	  cli.ok("Posting to :"  + reqOpt.postURL)
+	  request.post(reqOpt.postURL,function optionalCallback(err, httpResponse, body) {
+		  if (err){
+		  	if(postCallback){
+		  		postCallback(false,err);
+		  	}else{
+			    console.error('upload failed:', err);
+			    console.error(JSON.stringify(httpResponse));
+			    console.error(JSON.stringify(body));
+		  	}
 		  }
-		  buildCallback(body);
+		  postCallback(true,body);
 	  }).form(myPost);
 }
 
+
 WsPost.postNpmUpdateJson = function(report,confJson,postCallback){
+	var reqOpt = WsPost.getPostOptions(confJson,report);
+
 	try{
 		var modJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 	}catch(e){
@@ -105,40 +132,13 @@ WsPost.postNpmUpdateJson = function(report,confJson,postCallback){
 		return false;
 	}
 
-
-	var isHttps = true;
-
-	if(typeof(confJson.https) !== "undefined"){
-		 isHttps = confJson.https;
-	}
-
-	var baseURL = 'saas.whitesourcesoftware.com';
-	var protocol = (isHttps) ? "https://" : "http://";
-	var checkPol = (confJson.checkPolicies) ? confJson.checkPolicies : true;
-	var myReqType ='UPDATE';
-
-	if(!confJson.checkPolEnabled){
-		myReqType = 'UPDATE';
-	}
-
-	var reqHost = (confJson.baseURL) ? confJson.baseURL : baseURL;
-	var port = (confJson.port) ? confJson.port : "443";
-	var productName = (confJson.productName) ? confJson.productName : report.name;
-	var productVer = (confJson.productVersion) ? confJson.productVersion : report.version;
-	var productToken = (confJson.productToken) ? confJson.productToken : "";
-	var projectName = (confJson.projectName) ? confJson.projectName : report.name;
-	var projectVer = (confJson.projectVer) ? confJson.projectVer : report.version;
-	var projectToken = (confJson.projectToken) ? confJson.projectToken : "";
-	var ts = new Date().valueOf();
-	var postURL = protocol + reqHost + ":" + port + "/agent";
-
 	if(!confJson.apiKey){
 		//console.log(confJson.apiKey)
 		cli.error('Cant find API Key, please make sure you input your whitesource API token in the whitesource.config file.');
 		return false
 	}
 
-	if(projectToken && productToken){
+	if(reqOpt.projectToken && reqOpt.productToken){
 		cli.error('Cant use both project Token & product Token please select use only one token,to fix this open the whitesource.config file and remove one of the tokens.');
 		return false
 	}
@@ -155,23 +155,23 @@ WsPost.postNpmUpdateJson = function(report,confJson,postCallback){
 	}]
 
 	var myPost = {
-		  'type' : myReqType,
+		  'type' : reqOpt.myReqType,
 		  'agent':'npm-plugin',
 		  'agentVersion':'1.0',
-		  'product':productName,
-		  'productVer':productVer,
-		  'projectName':projectName,
-		  'projectVer':projectVer,
-		  'token':confJson.apiKey,
-		  'timeStamp':ts,
+		  'product':reqOpt.productName,
+		  'productVer':reqOpt.productVer,
+		  'projectName':reqOpt.projectName,
+		  'projectVer':reqOpt.projectVer,
+		  'token':reqOpt.apiKey,
+		  'timeStamp':reqOpt.ts,
 		  'diff':JSON.stringify(json)
 	  }
 
 	  //if both Project-Token and ProductToken send the Project-Token
-	  if(projectToken){
-		myPost.projectToken = projectToken;
-	  }else if(productToken){
-		myPost.productToken = productToken;
+	  if(reqOpt.projectToken){
+		myPost.projectToken = reqOpt.projectToken;
+	  }else if(reqOpt.productToken){
+		myPost.productToken = reqOpt.productToken;
 	  }
 
 
@@ -179,20 +179,9 @@ WsPost.postNpmUpdateJson = function(report,confJson,postCallback){
 	  WsHelper.saveReportFile(myPost,'whitesource.report-post.json');
 
 	  
-	  cli.ok("Posting to " + reqHost + ":" + port)
+	  cli.ok("Posting to :"  + reqOpt.postURL);
 
-	 if(confJson.proxy){
-	 	globalTunnel.initialize({
-		  host: confJson.proxy,
-		  port: confJson.proxyPort
-		  //sockets: 50 // for each http and https 
-		});
-
-		cli.ok('Using proxy: ' + confJson.proxy + ":" + confJson.proxyPort);
-	 }
-		
-
-	  request.post(postURL,function optionalCallback(err, httpResponse, body) {
+	  request.post(reqOpt.postURL,function optionalCallback(err, httpResponse, body) {
 		  if (err) {
 		  	if(postCallback){
 		  		postCallback(false,err);

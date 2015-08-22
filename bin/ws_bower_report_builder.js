@@ -3,9 +3,11 @@ exports.constructor = function WsBowerReportBuilder(){};
 
 var fs = require('fs');
 var cli = require('cli');
+var glob = require('glob');
 
 var MissingBower = 'Problem reading Bower.json, please check the file exists and is a valid JSON';
 var invalidBowerFile = 'Problem reading Bower.json, please check that you added a NAME and VERSION to the bower.json file.';
+var errorReadingBowerFiles = "error reading bower dependencies bower.json file.";
 
 
 WsBowerReportBuilder.getBowerCompsDir = function(){
@@ -40,32 +42,36 @@ WsBowerReportBuilder.buildReport = function(){
 	var bowerDeps = bowerFile.dependencies;
 
 	var options = {};
-	glob.sync( WsBowerReportBuilder.getBowerCompsDir() + "/**/bower.json", options, function (er, files) {
-		
-		for(var i = 0; i<files.length; i++){
-			try{
-				console.log('reading: + ' + files[i]);
-				bowerFile = JSON.parse(fs.readFileSync(files[i], 'utf8'));
-				debugger;
-				var item = {};
-				item['name'] = bowerFile.name;
-				item['artifactId'] = bowerFile.name;
-				item['version'] = bowerFile.version;
-				item['groupId'] = bowerFile.name;
-				item['systemPath'] = null;
-				item['scope'] = null;
-				item['exclusions'] = [];
-				item['children'] = [];
-				item['classifier'] = null;
-				depsArray.push(item);
-			}catch(e){
-				//should never happen but, only if bowerfile is missing the name | ver node. 
-				cli.error(invalidBowerFile);
-				cli.error("bower plugin file route:  " + files[i]);
-				return false;
-			}
-		}
-	});
+	try {
+		var files = glob.sync( WsBowerReportBuilder.getBowerCompsDir() + "/**/bower.json", options);
+	}catch(e){
+		cli.error(erroRReadingBowerFiles);
+	}
 
-	return {"deps":depsArray,"report":report_JSON,"conf":confJson};
+
+	for(var i = 0; i<files.length; i++){
+		try{
+			console.log('reading: + ' + files[i]);
+			bowerFile = JSON.parse(fs.readFileSync(files[i], 'utf8'));
+			debugger;
+			var item = {};
+			item['name'] = bowerFile.name;
+			item['artifactId'] = bowerFile.name;
+			item['version'] = bowerFile.version;
+			item['groupId'] = bowerFile.name;
+			item['systemPath'] = null;
+			item['scope'] = null;
+			item['exclusions'] = [];
+			item['children'] = [];
+			item['classifier'] = null;
+			depsArray.push(item);
+		}catch(e){
+			//should never happen but, only if bowerfile is missing the name | ver node. 
+			cli.error(invalidBowerFile);
+			cli.error("bower plugin file route:  " + files[i]);
+			return false;
+		}
+	}
+
+	return {"deps":depsArray,"report":report_JSON};
 }

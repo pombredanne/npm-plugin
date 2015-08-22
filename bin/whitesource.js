@@ -47,7 +47,7 @@ var nodeBuildCallback = function(isSuc,resJson){
 	}
 }
 
-bowerBuildCallback = function(isSuc,resJson){
+var bowerBuildCallback = function(isSuc,resJson){
 	if(isSuc){
 		WsHelper.saveReportFile(resJson,"response-bower.json");
 		cli.ok(resJson);
