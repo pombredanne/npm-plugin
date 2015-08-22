@@ -1,9 +1,13 @@
 node_modules
 /node_modules
 oldReadme
-./whitesource.config.json
+ws-log-npm.json
+ws-log-repsone.json
+ws-log-whitesource-report-post.json
+ws-log-whitesource-report.json
 whitesource.config.json
 whitesource.report.json
-./whitesource.report.json
-./npm-shrinkwrap.json
+
 npm-shrinkwrap.json
+bower.json
+.bowerrc
