@@ -16,6 +16,10 @@ projectToken ["Set WS specific productToken (for advanced users) Both NODE N BOW
 apiKey : ["WS apiKey as copied from website"]
 
 
+notes: 
+1) make sure to run npm install before running whitesource (so all modules are installed)
+2) when using bower - run bower install before running whitesource (so all bower deps are installed)
+
 /**
 
 Log file names, to keep track whne trouble shooting node / bower files:
