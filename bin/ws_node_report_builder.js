@@ -107,7 +107,6 @@ WsNodeReportBuilder.traverseShrinkWrapJson = function(shrinkwrap){
 	         }
 		}
 	}
-
 	cli.info("Total shasum found: " + foundedShasum);
 	cli.info("Missing shasum: " + missingShasum);
   	cli.info("Total project dependencies: " + (missingShasum + foundedShasum));

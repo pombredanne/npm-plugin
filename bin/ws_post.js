@@ -1,6 +1,3 @@
-var http = require('http');
-var https = require('https');
-var querystring = require('querystring');
 var cli = require('cli');
 var fs = require('fs');
 var globalTunnel = require('global-tunnel');
@@ -14,7 +11,13 @@ exports.constructor = function WsPost(){};
 var baseURL = 'saas.whitesourcesoftware.com';
 
 
-WsPost.getPostOptions = function(confJson,report){
+WsPost.getPostOptions = function(confJson,report,isBower){
+	
+	//TODO: make this better - if this is bower then report is an object.report node.
+	if(isBower){
+		var report = report.report;
+	}
+
 	var useHttps = true;
 
 	if(typeof(confJson.https) !== "undefined"){
@@ -57,7 +60,7 @@ WsPost.getPostOptions = function(confJson,report){
 
 WsPost.postBowerUpdateJson = function(report,confJson,postCallback){
 	cli.ok('Getting ready to post -bower- report to WhiteSource...');
-	var reqOpt = WsPost.getPostOptions(confJson,report);
+	var reqOpt = WsPost.getPostOptions(confJson,report,true);
 
 	if(!confJson.apiKey){
 		//console.log(confJson.apiKey)
@@ -69,40 +72,21 @@ WsPost.postBowerUpdateJson = function(report,confJson,postCallback){
 		cli.error('Cant use both project Token & product Token please select use only one token,to fix this open the whitesource.config file and remove one of the tokens.');
 		return false
 	}
-
-	var json = [{
-		dependencies:report.dependencies,
-		name:report.name,
-		version:report.version,
-		coordinates:{
-			"artifactId": report.name,
-			"version":report.version
-		}}]
-
-	var myPost = {
-		  'type' : reqOpt.myReqType,
-		  'agent':'bower-plugin',
-		  'agentVersion':'1.0',
-		  'product':reqOpt.productName,
-		  'productVer':reqOpt.productVer,
-		  'projectName':reqOpt.projectName,
-		  'projectVer':reqOpt.projectVer,
-		  'token':reqOpt.apiKey,
-		  'timeStamp':reqOpt.ts,
-		  'diff':JSON.stringify(json)
-	  }
-	  //if both Project-Token and ProductToken send the Project-Token
-	  if(reqOpt.projectToken){
+	
+	var myRequest = WsPost.buildRequest(report,reqOpt,"bower-plugin");
+	//if both Project-Token and ProductToken send the Project-Token
+	if(reqOpt.projectToken){
 		myPost.projectToken = reqOpt.projectToken;
-	  }else if(reqOpt.productToken){
+	}else if(reqOpt.productToken){
 		myPost.productToken = reqOpt.productToken;
-	  }
+	}
 
-	  WsHelper.saveReportFile(json,'whitesource-bower.report.json');
-	  WsHelper.saveReportFile(myPost,'whitesource-bower.report-post.json');
-	  
-	  cli.ok("Posting to :"  + reqOpt.postURL)
-	  request.post(reqOpt.postURL,function optionalCallback(err, httpResponse, body) {
+	WsHelper.saveReportFile(myRequest.json,'bower-report.json');
+	WsHelper.saveReportFile(myRequest.myPost,'bower-report-post.json');
+	
+
+	cli.ok("Posting to :"  + reqOpt.postURL);
+	request.post(reqOpt.postURL,function optionalCallback(err, httpResponse, body) {
 		  if (err){
 		  	if(postCallback){
 		  		postCallback(false,err);
@@ -113,9 +97,8 @@ WsPost.postBowerUpdateJson = function(report,confJson,postCallback){
 		  	}
 		  }
 		  postCallback(true,body);
-	  }).form(myPost);
+	  }).form(myRequest.myPost);
 }
-
 
 WsPost.postNpmUpdateJson = function(report,confJson,postCallback){
 	var reqOpt = WsPost.getPostOptions(confJson,report);
@@ -143,29 +126,7 @@ WsPost.postNpmUpdateJson = function(report,confJson,postCallback){
 		return false
 	}
 
-
-	var json = [{
-		dependencies:report.children,
-		name: modJson.name,
-		version:modJson.version,
-		coordinates:{
-        	"artifactId": modJson.name,
-	        "version":modJson.version
-    	}
-	}]
-
-	var myPost = {
-		  'type' : reqOpt.myReqType,
-		  'agent':'npm-plugin',
-		  'agentVersion':'1.0',
-		  'product':reqOpt.productName,
-		  'productVer':reqOpt.productVer,
-		  'projectName':reqOpt.projectName,
-		  'projectVer':reqOpt.projectVer,
-		  'token':reqOpt.apiKey,
-		  'timeStamp':reqOpt.ts,
-		  'diff':JSON.stringify(json)
-	  }
+	var myRequest = WsPost.buildRequest(report,reqOpt,"npm-plugin",modJson);
 
 	  //if both Project-Token and ProductToken send the Project-Token
 	  if(reqOpt.projectToken){
@@ -175,8 +136,8 @@ WsPost.postNpmUpdateJson = function(report,confJson,postCallback){
 	  }
 
 
-	  WsHelper.saveReportFile(json,'whitesource.report.json');
-	  WsHelper.saveReportFile(myPost,'whitesource.report-post.json');
+	  WsHelper.saveReportFile(myRequest.json,'report.json');
+	  WsHelper.saveReportFile(myRequest.myPost,'report-post.json');
 
 	  
 	  cli.ok("Posting to :"  + reqOpt.postURL);
@@ -192,7 +153,38 @@ WsPost.postNpmUpdateJson = function(report,confJson,postCallback){
 		  	}
 		  }
 		  postCallback(true,body);
-	  }).form(myPost);
+	  }).form(myRequest.myPost);
+}
 
+WsPost.buildRequest = function(report,reqOpt,agent,modJson){
 
+	//TODO: make this better - if this is bower then report is an object.report node.
+	var dependencies = (modJson) ? report.children : report.deps;
+	var name = (modJson) ? modJson.name : report.report.name;
+	var version = (modJson) ? modJson.version : report.report.version;
+
+	var json = [{
+		dependencies:dependencies,
+		name: name,
+		version:version,
+		coordinates:{
+        	"artifactId": name,
+	        "version":version
+    	}
+	}]
+
+	var myPost = {
+		  'type' : reqOpt.myReqType,
+		  'agent':agent,
+		  'agentVersion':'1.0',
+		  'product':reqOpt.productName,
+		  'productVer':reqOpt.productVer,
+		  'projectName':reqOpt.projectName,
+		  'projectVer':reqOpt.projectVer,
+		  'token':reqOpt.apiKey,
+		  'timeStamp':reqOpt.ts,
+		  'diff':JSON.stringify(json)
+	  }
+
+	  return {myPost:myPost,json:json};
 }

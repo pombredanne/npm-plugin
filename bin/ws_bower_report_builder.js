@@ -53,7 +53,6 @@ WsBowerReportBuilder.buildReport = function(){
 		try{
 			console.log('reading: + ' + files[i]);
 			bowerFile = JSON.parse(fs.readFileSync(files[i], 'utf8'));
-			debugger;
 			var item = {};
 			item['name'] = bowerFile.name;
 			item['artifactId'] = bowerFile.name;
