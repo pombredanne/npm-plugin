@@ -1,0 +1,16 @@
+"Config file options":
+
+devDep <Bool> ["Include devDependencies (NODE ONLY)"]
+proxyPort ["Must Specify port Number if Using Proxy devDependencies (NODE N BOWER)"]
+proxy <String> ["Must Specify proxy host if Using Proxy (NODE N BOWER)"]
+https <Bool> ["Use httpS post (Defaults: true , NODE N BOWER)"]
+baseURL <String> ["Overwrite WS post baseURL (NODE N BOWER) example:localhost:8080"]
+port <String> ["Overwrite WS post default Port (NODE N BOWER) example: 4242"]
+
+productName ["Set productName , defaults to packge.json.name or bower.json.name"]
+productVersion ["Set productName , defaults to packge.json.version or bower.json.version"]
+productToken ["Set WS specific productToken (for advanced users) Both NODE N BOWER"]
+projectName ["Set projectName , defaults to packge.json.version or bower.json.version"]
+projectVer ["Set projectVer , defaults to packge.json.version or bower.json.version"]
+projectToken ["Set WS specific productToken (for advanced users) Both NODE N BOWER"]
+apiKey : ["WS apiKey as copied from website"]
