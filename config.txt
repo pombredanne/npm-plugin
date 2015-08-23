@@ -29,7 +29,6 @@ ws-log-bower-report
 ws-log-bower-report-post.json
 ws-log-bower-report.json
 ws-log-response-bower.json
-
 ws-log-npm-report
 ws-log-report-post.json
 ws-log-report.json
