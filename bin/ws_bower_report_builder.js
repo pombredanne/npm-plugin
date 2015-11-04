@@ -43,7 +43,7 @@ WsBowerReportBuilder.buildReport = function(){
 
 	var options = {};
 	try {
-		var files = glob.sync( WsBowerReportBuilder.getBowerCompsDir() + "/**/bower.json", options);
+		var files = glob.sync( WsBowerReportBuilder.getBowerCompsDir() + "/**/.bower.json", options);
 	}catch(e){
 		cli.error(erroRReadingBowerFiles);
 	}
