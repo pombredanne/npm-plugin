@@ -21,6 +21,50 @@ WsBowerReportBuilder.getBowerCompsDir = function(){
 	}
 }
 
+WsBowerReportBuilder.getVersionFromPackgeJson = function(allPackJsonFile,compBowerFile){
+	var ans;
+
+	for(var i = 0; i<allPackJsonFile.length; i++){
+			var packagePath = allPackJsonFile[i].split('/');
+			if(packagePath[packagePath.length - 2] == compBowerFile.name){
+				try{
+					compPackageJson = JSON.parse(fs.readFileSync(allPackJsonFile[i], 'utf8'));
+					if(compPackageJson.version){
+						ans = compPackageJson.version;
+					}
+					break;
+				}catch(e){
+					cli.error("Problem reading package.json for: " + compBowerFile.name);
+					return false;
+				}
+			}
+		}
+
+	return ans;
+}
+
+WsBowerReportBuilder.getCompVersion = function(compBowerFile,parentBowerFile,packageJSONfiles){
+	var ans = WsBowerReportBuilder.getVersionFromPackgeJson(packageJSONfiles,compBowerFile)
+ 	
+ 	//take the .bower.json version node
+	if(compBowerFile.version){
+		return compBowerFile.version;
+	}
+
+  	//take the com package.json version
+	if(ans){
+		return ans;
+	}
+
+	//take the release node
+  	if(compBowerFile._release){
+  		return compBowerFile._release;
+  	}
+
+	//extract the version from the comp parent - main bower.json.
+	return parentBowerFile[compBowerFile.name]; 
+}
+
 WsBowerReportBuilder.buildReport = function(){
 	var depsArray = [];
 	var report_JSON = {};
@@ -44,10 +88,10 @@ WsBowerReportBuilder.buildReport = function(){
 	var options = {};
 	try {
 		var files = glob.sync( WsBowerReportBuilder.getBowerCompsDir() + "/**/.bower.json", options);
+		var packageJSONfiles = glob.sync( WsBowerReportBuilder.getBowerCompsDir() + "/**/package.json", options);
 	}catch(e){
 		cli.error(erroRReadingBowerFiles);
 	}
-
 
 	for(var i = 0; i<files.length; i++){
 		try{
@@ -56,7 +100,7 @@ WsBowerReportBuilder.buildReport = function(){
 			var item = {};
 			item['name'] = bowerFile.name;
 			item['artifactId'] = bowerFile.name;
-			item['version'] = bowerFile.version;
+			item['version'] = WsBowerReportBuilder.getCompVersion(bowerFile,bowerDeps,packageJSONfiles);
 			item['groupId'] = bowerFile.name;
 			item['systemPath'] = null;
 			item['scope'] = null;
