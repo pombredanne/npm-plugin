@@ -4,6 +4,9 @@ exports.constructor = function WsBowerReportBuilder(){};
 var fs = require('fs');
 var cli = require('cli');
 var glob = require('glob');
+var crypto = require('crypto');
+var checksum = require('checksum');
+var exec = require('child_process').exec;
 
 var MissingBower = 'Problem reading Bower.json, please check the file exists and is a valid JSON';
 var invalidBowerFile = 'Problem reading Bower.json, please check that you added a NAME and VERSION to the bower.json file.';
@@ -41,6 +44,31 @@ WsBowerReportBuilder.getVersionFromPackgeJson = function(allPackJsonFile,compBow
 		}
 
 	return ans;
+}
+
+WsBowerReportBuilder.getSH1 = function(bowerFile){
+	debugger;
+
+
+
+	console.log(WsBowerReportBuilder.getBowerCompsDir() + "/" + bowerFile.name + "/" + bowerFile.main);
+	checksum.file(WsBowerReportBuilder.getBowerCompsDir() + "/" + bowerFile.name + "/" + bowerFile.main, function (err, sum) {
+	   return sum;
+	})
+	//var hash = crypto.createHash('sha1');
+
+	//var file = fs.readFileSync(WsBowerReportBuilder.getBowerCompsDir() + "/" + bowerFile.name + "/" + bowerFile.main, 'utf8');
+	//var sha1sum;
+	// change to 'binary' if you want a binary hash.
+	//hash.setEncoding('hex');
+	// the text that you want to hash
+	//hash.write(file);
+	// very important! You cannot read from the stream until you have called end()
+	//hash.end();
+	// and now you get the resulting hash
+	//sha1sum = hash.read();
+	//return sha1sum;
+	//return checksum(file);
 }
 
 WsBowerReportBuilder.getCompVersion = function(compBowerFile,parentBowerFile,packageJSONfiles){
@@ -107,6 +135,7 @@ WsBowerReportBuilder.buildReport = function(){
 			item['exclusions'] = [];
 			item['children'] = [];
 			item['classifier'] = null;
+			item['sha1'] = WsBowerReportBuilder.getSH1(bowerFile);
 			depsArray.push(item);
 		}catch(e){
 			//should never happen but, only if bowerfile is missing the name | ver node. 
