@@ -87,7 +87,6 @@ cli.main(function (args, options){
 	}
 	if(cli.command === "bower-sha1"){
 		WsBowerHelper.generateCompsSha1();
-		process.exit(0);
 		/*then(function(results){debugger;
 			console.log("from then fn");
 			    results.forEach(function (result) {
