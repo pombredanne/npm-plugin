@@ -46,29 +46,11 @@ WsBowerReportBuilder.getVersionFromPackgeJson = function(allPackJsonFile,compBow
 	return ans;
 }
 
-WsBowerReportBuilder.getSH1 = function(bowerFile){
-	debugger;
-
-
-
-	console.log(WsBowerReportBuilder.getBowerCompsDir() + "/" + bowerFile.name + "/" + bowerFile.main);
-	checksum.file(WsBowerReportBuilder.getBowerCompsDir() + "/" + bowerFile.name + "/" + bowerFile.main, function (err, sum) {
-	   return sum;
-	})
-	//var hash = crypto.createHash('sha1');
-
-	//var file = fs.readFileSync(WsBowerReportBuilder.getBowerCompsDir() + "/" + bowerFile.name + "/" + bowerFile.main, 'utf8');
-	//var sha1sum;
-	// change to 'binary' if you want a binary hash.
-	//hash.setEncoding('hex');
-	// the text that you want to hash
-	//hash.write(file);
-	// very important! You cannot read from the stream until you have called end()
-	//hash.end();
-	// and now you get the resulting hash
-	//sha1sum = hash.read();
-	//return sha1sum;
-	//return checksum(file);
+WsBowerReportBuilder.getSH1 = function(shaFilePath){
+	console.log(shaFilePath)
+	var file = fs.readFileSync(shaFilePath, 'utf8');
+	var shaJson = JSON.parse(file);
+	return shaJson['sha1'];
 }
 
 WsBowerReportBuilder.getCompVersion = function(compBowerFile,parentBowerFile,packageJSONfiles){
@@ -117,6 +99,7 @@ WsBowerReportBuilder.buildReport = function(){
 	try {
 		var files = glob.sync( WsBowerReportBuilder.getBowerCompsDir() + "/**/.bower.json", options);
 		var packageJSONfiles = glob.sync( WsBowerReportBuilder.getBowerCompsDir() + "/**/package.json", options);
+		var shaFiles = glob.sync( WsBowerReportBuilder.getBowerCompsDir() + "/**/.ws-sha1.json", options);
 	}catch(e){
 		cli.error(erroRReadingBowerFiles);
 	}
@@ -135,7 +118,7 @@ WsBowerReportBuilder.buildReport = function(){
 			item['exclusions'] = [];
 			item['children'] = [];
 			item['classifier'] = null;
-			item['sha1'] = WsBowerReportBuilder.getSH1(bowerFile);
+			item['sha1'] = WsBowerReportBuilder.getSH1(shaFiles[i]);
 			depsArray.push(item);
 		}catch(e){
 			//should never happen but, only if bowerfile is missing the name | ver node. 

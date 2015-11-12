@@ -87,6 +87,7 @@ cli.main(function (args, options){
 	}
 	if(cli.command === "bower-sha1"){
 		WsBowerHelper.generateCompsSha1();
+		process.exit(0);
 		/*then(function(results){debugger;
 			console.log("from then fn");
 			    results.forEach(function (result) {
@@ -112,10 +113,11 @@ cli.main(function (args, options){
 	if(cli.command === "bower"){
 		runtimeMode = "bower";
 
-		cli.ok('Running whitesource...');
+		cli.ok('Running Whitesource Bower...');
+		cli.ok('Generating Version Keys');
+		var cmd = (confJson.devDep === "true") ? 'whitesource bower-sha1 --dev' : 'whitesource bower-sha1';
+		exec(cmd);		
 		cli.ok('Checking Bower Dependencies...');
-		
-
 		var json = buildReport();
 
 		cli.ok("Saving bower dependencies report");

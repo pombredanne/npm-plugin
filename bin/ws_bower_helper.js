@@ -14,11 +14,27 @@ WsBowerHelper.checksumBowerDeps = function(files){
 		locationHash.pop();
 		var newLoc = locationHash.join('/');
 		var compBower = JSON.parse( fs.readFileSync(file, 'utf8') );
-		var callback = function (err, sum) {
-			WsBowerHelper.writeSha1File(newLoc,sum);
-		};
-		console.log('checksum now for ' + newLoc + "/" + compBower.main)
-		checksum.file(newLoc + "/" + compBower.main, callback);
+		var compMainFile = compBower.main;
+		if(Object.prototype.toString.call(compMainFile) === "[object Array]"){
+			compMainFile = compMainFile[0];
+		}
+		if(compMainFile[0] == "."){
+			compMainFile = compMainFile.substr(1);
+		}
+		if(compMainFile[0] == "/"){
+			compMainFile = compMainFile.substr(1);
+		}
+
+		var callback = function (err, sum,isLast) {
+			console.log(this.newLoc + "  sum: " + sum);
+			WsBowerHelper.writeSha1File(this.newLoc,sum);
+		}
+
+		// console.log('checksum now for ' + newLoc + "/" + compMainFile);
+		checksum.file(newLoc + "/" + compMainFile, callback.bind({newLoc:newLoc}));
+		// checksum.file(newLoc + "/" + compMainFile, function(){
+		// 	console.log('wtf?')
+		// });
 	}
 
 	// for (var i = 0; i< bowerDepsFilePaths.length; i++){
@@ -35,12 +51,8 @@ WsBowerHelper.generateCompsSha1 = function(){
 
 WsBowerHelper.writeSha1File = function(location,sum){
 	try{
-	
-		fs.writeFile(location + "/.ws_sha1.json", JSON.stringify({"sha1":sum}, null, 4), function(err) {
-		    if(err){
-		      cli.error(err);
-		    }else{}
-		});
+		// console.log('writing sha1 : ' + sum + " to " + location + "/.ws_sha1.json");
+		fs.writeFileSync(location + "/.ws-sha1.json", JSON.stringify({"sha1":sum}, null, 4),{});
 	}catch(e){
 		cli.error(e);
 	}
