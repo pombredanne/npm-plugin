@@ -13,8 +13,15 @@ WsBowerHelper.checksumBowerDeps = function(files){
 		var locationHash = file.split('/');
 		locationHash.pop();
 		var newLoc = locationHash.join('/');
-		var compBower = JSON.parse( fs.readFileSync(file, 'utf8') );
-		var compMainFile = compBower.main;
+		try{
+			var compBower = JSON.parse( fs.readFileSync(file, 'utf8') );
+		}catch(e){
+			console.log("Problem reading Bower.json for : " + file + " please check the file exists and is valid");
+		}
+
+		console.log(file);
+		var compMainFile = (compBower.main) ? compBower.main : file;
+
 		if(Object.prototype.toString.call(compMainFile) === "[object Array]"){
 			compMainFile = compMainFile[0];
 		}
@@ -26,8 +33,9 @@ WsBowerHelper.checksumBowerDeps = function(files){
 		}
 
 		var callback = function (err, sum,isLast) {
-			console.log(this.newLoc + "  sum: " + sum);
-			WsBowerHelper.writeSha1File(this.newLoc,sum);
+			var sumClc = (typeof (sum) != "undefined") ? sum : "0";
+			console.log(this.newLoc + "  sum: " + sumClc);
+			WsBowerHelper.writeSha1File(this.newLoc,sumClc);
 		}
 
 		// console.log('checksum now for ' + newLoc + "/" + compMainFile);
