@@ -19,7 +19,6 @@ WsBowerHelper.checksumBowerDeps = function(files){
 			console.log("Problem reading Bower.json for : " + file + " please check the file exists and is valid");
 		}
 
-		console.log(file);
 		var compMainFile = (compBower.main) ? compBower.main : file;
 
 		if(Object.prototype.toString.call(compMainFile) === "[object Array]"){
