@@ -84,10 +84,16 @@ WsNodeReportBuilder.traverseShrinkWrapJson = function(shrinkwrap){
 					var joinedStr = strArr.join('');
 					joinedStr = joinedStr.substr(0,joinedStr.lastIndexOf('['));
 					var objPointer = 'parseData["' + joinedStr.replace(/node_modules/gi, "dependencies");
-					var dataObjPointer = eval(objPointer);
+					var invalidProj = false;
+					try{
+						var dataObjPointer = eval(objPointer);	
+					}catch(e){
+						invalidProj = true;
+					}
+					
 		       		var obj = JSON.parse(fs.readFileSync(uri, 'utf8'));
 
-		       		if(obj.dist || obj._shasum){
+		       		if( (!invalidProj) && (obj.dist || obj._shasum) ){
 		       			//cli.ok('Founded dependencie shasum');
 		       			if(obj.dist){
 		       				dataObjPointer.shasum = obj.dist.shasum;
