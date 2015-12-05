@@ -50,8 +50,31 @@ WsNodeReportBuilder.traverseShrinkWrapJson = function(shrinkwrap){
 	cli.ok("Building dependencies report");
 	var foundedShasum = 0;
 	var missingShasum = 0;
+	var invalidDeps = [];
 	var parseData = shrinkwrap;
 	var scrubbed = traverse(parseData).paths();
+
+	var getParentDepPointer = function(depPointer){
+		//Example :  "[dependencies"]["ft-next-express"]["dependencies"]["@financial-times"]["n-handlebars"]"
+
+		//["n-handlebars"]"
+		var childDepStr = depPointer.substr(depPointer.lastIndexOf('['),depPointer.lastIndexOf(']') );
+
+		//"n-handlebars"
+		var childDepName = JSON.parse( childDepStr )[0]; 
+
+		//"[dependencies"]["ft-next-express"]["dependencies"]["@financial-times"]"
+		var ansStr = depPointer.substr(0,depPointer.lastIndexOf('['))
+
+		//"[dependencies"]["ft-next-express"]["dependencies"]["@financial-times"
+		var transStr = ansStr.substring(0,ansStr.lastIndexOf('"]'));
+		
+		//"[dependencies"]["ft-next-express"]["dependencies"]["@financial-times" + / + child + "]";
+		fixedStr = transStr + "/" + childDepName + '"]';
+		return fixedStr;
+
+	};
+
 	for (var i = 0; i<scrubbed.length; i++){
 		var path = scrubbed[i];
 		for(var j = 0; j<path.length; j++){
@@ -88,6 +111,16 @@ WsNodeReportBuilder.traverseShrinkWrapJson = function(shrinkwrap){
 					try{
 						var dataObjPointer = eval(objPointer);	
 					}catch(e){
+						try {
+							var pointerString = '["' + joinedStr.replace(/node_modules/gi, "dependencies");
+							var parentDepPointer = getParentDepPointer(pointerString);
+							invalidDeps.push(parentDepPointer);
+							var objPointer = 'parseData' + parentDepPointer;
+							var parentDep = eval('delete ' + objPointer);
+							//delete parentDep;
+						}catch(e){
+							//pointer points to child of deleted object.
+						}
 						invalidProj = true;
 					}
 					
@@ -101,6 +134,8 @@ WsNodeReportBuilder.traverseShrinkWrapJson = function(shrinkwrap){
 		       			}
 		       			if(obj._shasum){
 		       				dataObjPointer.sha1 = obj._shasum;
+		       				dataObjPointer.shasum = obj._shasum;
+		       				path.shasum = obj._shasum;
 		       				path.sha1 = obj._shasum;
 		       			}
 
@@ -113,6 +148,12 @@ WsNodeReportBuilder.traverseShrinkWrapJson = function(shrinkwrap){
 	         }
 		}
 	}
+
+	// for (var i = 0; i<invalidDeps.length; i++){
+	// 	cli.info("Problem with invalid package: " + invalidDeps[i]);	
+	// }
+
+
 	cli.info("Total shasum found: " + foundedShasum);
 	cli.info("Missing shasum: " + missingShasum);
   	cli.info("Total project dependencies: " + (missingShasum + foundedShasum));
